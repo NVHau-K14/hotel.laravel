@@ -10,7 +10,7 @@
 | 1 | Cấu hình, Migration, Seeder, tài nguyên tĩnh | ✅ Xong (2026-10-15) |
 | 2 | Model Eloquent | ✅ Xong (2026-10-15) |
 | 3 | Auth, phân quyền, layout, helper, xử lý lỗi | ✅ Xong (2026-10-15) |
-| 4A | LoaiPhong, Phong, DichVu | ⬜ |
+| 4A | LoaiPhong, Phong, DichVu | ✅ Xong (2026-10-15) |
 | 4B | KhachHang, NhanVien, ChucVu | ⬜ |
 | 4C | PhanCong, DanhGia | ⬜ |
 | 4D | DatPhong, CtDichVu, HoaDon | ⬜ |
@@ -92,6 +92,19 @@
   - Đăng ký: thiếu trường / SĐT trùng / SĐT sai / email sai / email trùng → đúng câu gốc, giữ dữ liệu đã nhập; đăng ký hợp lệ → tự đăng nhập, `Email = ''`, `EmailConnexion = NULL`, mật khẩu bcrypt, họ tên tiếng Việt lưu đúng UTF-8.
   - Bộ xử lý lỗi: `DomainException` POST → 302 + flash + dữ liệu cũ (không có mật khẩu), GET → 422; `QueryException` 1451/1062/1452 → đúng câu tiếng Việt; 1366 → 500 mặc định.
 
+### Kết quả Giai đoạn 4A (Loại phòng, Phòng, Dịch vụ)
+- [x] `Route::resource(...)->except('show')->middleware('quyen:...')->missing(...)`: bản ghi không tồn tại → về danh sách kèm flash như bản gốc ("Loại phòng không tồn tại.", "Không tìm thấy thông tin phòng.", "Không tìm thấy dịch vụ.").
+- [x] Form Request: `LoaiPhongRequest`, `StorePhongRequest`, `UpdatePhongRequest`, `DichVuRequest`; luật ảnh dùng chung ở trait `Requests\Concerns\KiemTraAnhTaiLen`.
+- [x] Upload: `Controller::luuAnhTaiLen()` → `store($thuMuc, 'uploads')`, tên ngẫu nhiên 40 ký tự, DB lưu `/uploads/phong/<tên>` hoặc `/uploads/dichvu/<tên>`. Ảnh tải lên được ưu tiên hơn đường dẫn nhập tay (như bản gốc).
+- [x] Sửa lỗi **L1**: form phòng chỉ còn 4 trạng thái `Trống, Đã đặt, Đang thuê, Bảo trì`; danh sách/đếm vẫn coi "Đang sử dụng" là đang thuê.
+- [x] Sửa phòng: kiểm tra "đang có lịch đặt" (R51) **trước** khi lưu ảnh, tránh để lại file thừa khi bị chặn.
+- Ghi chú: form lỗi giữ lại dữ liệu vừa nhập (`old()`), bản gốc thì hiện lại dữ liệu cũ của bản ghi. Mô tả loại phòng rỗng vẫn lưu `''` như bản gốc.
+- **Kiểm tra (HTTP thật qua `http://hotel.laravel.test`, đăng nhập `viet`): 59/59 đạt**, sau đó `migrate:fresh --seed` và xóa ảnh thử.
+  - Loại phòng: danh sách 3; bỏ trống / tên > 20 ký tự → đúng câu gốc; thêm "Gia đình" (flash), sửa, xóa loại không có phòng → xóa hẳn; xóa loại 3 (còn phòng) → `DaXoa = 1`, ẩn khỏi danh sách và khỏi form phòng; sửa id 999 → flash "Loại phòng không tồn tại.".
+  - Phòng: danh sách 15, ô "Phòng trống" = 15; lọc từ khóa "Vip" → 301–305; lọc ngày 07→09/05/2026 loại đúng 102, 103, 201; lọc ngày sai → báo lỗi; lọc loại + giá; form không còn "Đang sử dụng"; mã trùng / thiếu mã / trạng thái "Đang sử dụng" (R52) / loại đã xóa (R53) / file không phải ảnh (R06) → đúng câu gốc; thêm phòng 106 kèm ảnh → file nằm ở `public/uploads/phong/<40 ký tự>.jpg`, mở được qua URL; sửa 106 giữ nguyên ảnh; phòng 105 có đơn chờ duyệt → đổi trạng thái bị chặn (R51), đổi ảnh vẫn được; xóa 101 (đã có đơn) → "Không thể xóa vì dữ liệu này đang được sử dụng…"; xóa 106 được; DELETE bằng GET → 405.
+  - Dịch vụ: danh sách 5; giá 0 / tên > 50 ký tự (R40) → đúng câu gốc; thêm "Giặt ủi" kèm ảnh → `/uploads/dichvu/...`; sửa giá + đường dẫn ảnh; xóa dịch vụ đang dùng trong CTDICHVU → lỗi 1451 tiếng Việt; xóa dịch vụ mới được.
+  - Phân quyền: `binh` (Lễ tân) → `/admin/phong`, `/admin/loai-phong/them`, DELETE phòng đều 403; `/admin/dich-vu` 200.
+
 ---
 
 ## 1. Bảng ánh xạ route
@@ -112,18 +125,18 @@ Quy ước:
 | A04 | auth / changePassword (POST) | PUT | `/admin/doi-mat-khau` | `admin.doi-mat-khau.update` | `AuthController@changePassword` | `auth:admin` | ✅ |
 | A05 | auth / logout | POST | `/admin/dang-xuat` | `admin.dang-xuat` | `AuthController@logout` | `auth:admin` | ✅ |
 | A06 | dashboard / index (và `admin/` không có `c`) | GET | `/admin` | `admin.dashboard` | `DashboardController@index` | DASHBOARD | ✅ |
-| A07 | phong / list | GET | `/admin/phong` | `admin.phong.index` | `PhongController@index` | PHONG | ⬜ |
-| A08 | phong / add (GET) | GET | `/admin/phong/them` | `admin.phong.create` | `PhongController@create` | PHONG | ⬜ |
-| A09 | phong / add (POST) | POST | `/admin/phong` | `admin.phong.store` | `PhongController@store` | PHONG | ⬜ |
-| A10 | phong / edit (GET) | GET | `/admin/phong/{phong}/sua` | `admin.phong.edit` | `PhongController@edit` | PHONG | ⬜ |
-| A11 | phong / edit (POST) | PUT | `/admin/phong/{phong}` | `admin.phong.update` | `PhongController@update` | PHONG | ⬜ |
-| A12 | phong / delete | DELETE | `/admin/phong/{phong}` | `admin.phong.destroy` | `PhongController@destroy` | PHONG | ⬜ |
-| A13 | loai-phong / list | GET | `/admin/loai-phong` | `admin.loai-phong.index` | `LoaiPhongController@index` | LOAI_PHONG | ⬜ |
-| A14 | loai-phong / add (GET) | GET | `/admin/loai-phong/them` | `admin.loai-phong.create` | `LoaiPhongController@create` | LOAI_PHONG | ⬜ |
-| A15 | loai-phong / add (POST) | POST | `/admin/loai-phong` | `admin.loai-phong.store` | `LoaiPhongController@store` | LOAI_PHONG | ⬜ |
-| A16 | loai-phong / edit (GET) | GET | `/admin/loai-phong/{loai_phong}/sua` | `admin.loai-phong.edit` | `LoaiPhongController@edit` | LOAI_PHONG | ⬜ |
-| A17 | loai-phong / edit (POST) | PUT | `/admin/loai-phong/{loai_phong}` | `admin.loai-phong.update` | `LoaiPhongController@update` | LOAI_PHONG | ⬜ |
-| A18 | loai-phong / delete | DELETE | `/admin/loai-phong/{loai_phong}` | `admin.loai-phong.destroy` | `LoaiPhongController@destroy` | LOAI_PHONG | ⬜ |
+| A07 | phong / list | GET | `/admin/phong` | `admin.phong.index` | `PhongController@index` | PHONG | ✅ |
+| A08 | phong / add (GET) | GET | `/admin/phong/them` | `admin.phong.create` | `PhongController@create` | PHONG | ✅ |
+| A09 | phong / add (POST) | POST | `/admin/phong` | `admin.phong.store` | `PhongController@store` | PHONG | ✅ |
+| A10 | phong / edit (GET) | GET | `/admin/phong/{phong}/sua` | `admin.phong.edit` | `PhongController@edit` | PHONG | ✅ |
+| A11 | phong / edit (POST) | PUT | `/admin/phong/{phong}` | `admin.phong.update` | `PhongController@update` | PHONG | ✅ |
+| A12 | phong / delete | DELETE | `/admin/phong/{phong}` | `admin.phong.destroy` | `PhongController@destroy` | PHONG | ✅ |
+| A13 | loai-phong / list | GET | `/admin/loai-phong` | `admin.loai-phong.index` | `LoaiPhongController@index` | LOAI_PHONG | ✅ |
+| A14 | loai-phong / add (GET) | GET | `/admin/loai-phong/them` | `admin.loai-phong.create` | `LoaiPhongController@create` | LOAI_PHONG | ✅ |
+| A15 | loai-phong / add (POST) | POST | `/admin/loai-phong` | `admin.loai-phong.store` | `LoaiPhongController@store` | LOAI_PHONG | ✅ |
+| A16 | loai-phong / edit (GET) | GET | `/admin/loai-phong/{loai_phong}/sua` | `admin.loai-phong.edit` | `LoaiPhongController@edit` | LOAI_PHONG | ✅ |
+| A17 | loai-phong / edit (POST) | PUT | `/admin/loai-phong/{loai_phong}` | `admin.loai-phong.update` | `LoaiPhongController@update` | LOAI_PHONG | ✅ |
+| A18 | loai-phong / delete | DELETE | `/admin/loai-phong/{loai_phong}` | `admin.loai-phong.destroy` | `LoaiPhongController@destroy` | LOAI_PHONG | ✅ |
 | A19 | dat-phong / list (`?trangThai`, `?keyword`) | GET | `/admin/dat-phong` | `admin.dat-phong.index` | `DatPhongController@index` | DAT_PHONG | ⬜ |
 | A20 | dat-phong / add (GET) | GET | `/admin/dat-phong/them` | `admin.dat-phong.create` | `DatPhongController@create` | DAT_PHONG | ⬜ |
 | A21 | dat-phong / add (POST) | POST | `/admin/dat-phong` | `admin.dat-phong.store` | `DatPhongController@store` | DAT_PHONG | ⬜ |
@@ -134,12 +147,12 @@ Quy ước:
 | A26 | dat-phong / cancel | POST | `/admin/dat-phong/{dat_phong}/huy` | `admin.dat-phong.huy` | `DatPhongController@cancel` | DAT_PHONG | ⬜ |
 | A27 | dat-phong / addService | POST | `/admin/dat-phong/{dat_phong}/dich-vu` | `admin.dat-phong.dich-vu.store` | `DatPhongController@addService` | DAT_PHONG | ⬜ |
 | A28 | dat-phong / removeService | DELETE | `/admin/dat-phong/{dat_phong}/dich-vu/{dich_vu}` | `admin.dat-phong.dich-vu.destroy` | `DatPhongController@removeService` | DAT_PHONG | ⬜ |
-| A29 | dich-vu / list | GET | `/admin/dich-vu` | `admin.dich-vu.index` | `DichVuController@index` | DICH_VU | ⬜ |
-| A30 | dich-vu / add (GET) | GET | `/admin/dich-vu/them` | `admin.dich-vu.create` | `DichVuController@create` | DICH_VU | ⬜ |
-| A31 | dich-vu / add (POST) | POST | `/admin/dich-vu` | `admin.dich-vu.store` | `DichVuController@store` | DICH_VU | ⬜ |
-| A32 | dich-vu / edit (GET) | GET | `/admin/dich-vu/{dich_vu}/sua` | `admin.dich-vu.edit` | `DichVuController@edit` | DICH_VU | ⬜ |
-| A33 | dich-vu / edit (POST) | PUT | `/admin/dich-vu/{dich_vu}` | `admin.dich-vu.update` | `DichVuController@update` | DICH_VU | ⬜ |
-| A34 | dich-vu / delete | DELETE | `/admin/dich-vu/{dich_vu}` | `admin.dich-vu.destroy` | `DichVuController@destroy` | DICH_VU | ⬜ |
+| A29 | dich-vu / list | GET | `/admin/dich-vu` | `admin.dich-vu.index` | `DichVuController@index` | DICH_VU | ✅ |
+| A30 | dich-vu / add (GET) | GET | `/admin/dich-vu/them` | `admin.dich-vu.create` | `DichVuController@create` | DICH_VU | ✅ |
+| A31 | dich-vu / add (POST) | POST | `/admin/dich-vu` | `admin.dich-vu.store` | `DichVuController@store` | DICH_VU | ✅ |
+| A32 | dich-vu / edit (GET) | GET | `/admin/dich-vu/{dich_vu}/sua` | `admin.dich-vu.edit` | `DichVuController@edit` | DICH_VU | ✅ |
+| A33 | dich-vu / edit (POST) | PUT | `/admin/dich-vu/{dich_vu}` | `admin.dich-vu.update` | `DichVuController@update` | DICH_VU | ✅ |
+| A34 | dich-vu / delete | DELETE | `/admin/dich-vu/{dich_vu}` | `admin.dich-vu.destroy` | `DichVuController@destroy` | DICH_VU | ✅ |
 | A35 | hoa-don / list | GET | `/admin/hoa-don` | `admin.hoa-don.index` | `HoaDonController@index` | HOA_DON | ⬜ |
 | A36 | hoa-don / detail | GET | `/admin/hoa-don/{hoa_don}` | `admin.hoa-don.show` | `HoaDonController@show` | HOA_DON | ⬜ |
 | A37 | hoa-don / pay | POST | `/admin/hoa-don/{hoa_don}/thanh-toan` | `admin.hoa-don.thanh-toan` | `HoaDonController@pay` | HOA_DON | ⬜ |
@@ -218,8 +231,8 @@ Ghi chú route:
 | R02 | 71 | `validate_stay`: ngày nhận < hôm nay (trừ khi `allowPast`) | Ngày nhận phòng không được nằm trong quá khứ. | Form Request (`after_or_equal:today`) + `DatPhongService::createBooking` | `DatPhongService::validateStay` ✅ (Form Request: chờ GĐ 4D/5) |
 | R03 | 77 | `validate_customer`: họ tên rỗng/>255 hoặc SĐT không khớp `/^[+0-9][0-9 .()-]{7,19}$/` | Vui lòng nhập họ tên và số điện thoại hợp lệ. | Form Request đặt phòng/đăng ký (`regex`, `max`) | `Client\DangKyRequest` ✅ (đặt phòng: GĐ 5) |
 | R04 | 80 | `validate_customer`: email sai/ >254, địa chỉ >255, CMND >20 | Email, địa chỉ hoặc số giấy tờ không hợp lệ hoặc quá dài. | Form Request đặt phòng/đăng ký | `Client\DangKyRequest` ✅ (đặt phòng: GĐ 5) |
-| R05 | 93 | `upload_image`: lỗi upload hoặc > 5 MB | Không tải được ảnh. Vui lòng chọn ảnh tối đa 5 MB. | Form Request Phong/DichVu (`max:5120`) | |
-| R06 | 98 | `upload_image`: không phải JPG/PNG/WebP/GIF hợp lệ | Chỉ chấp nhận ảnh JPG, PNG, WebP hoặc GIF hợp lệ. | Form Request (`image`, `mimes:jpg,jpeg,png,webp,gif`) | |
+| R05 | 93 | `upload_image`: lỗi upload hoặc > 5 MB | Không tải được ảnh. Vui lòng chọn ảnh tối đa 5 MB. | Form Request Phong/DichVu (`max:5120`) | `Concerns\KiemTraAnhTaiLen` (`file`, `max:5120`) ✅ |
+| R06 | 98 | `upload_image`: không phải JPG/PNG/WebP/GIF hợp lệ | Chỉ chấp nhận ảnh JPG, PNG, WebP hoặc GIF hợp lệ. | Form Request (`image`, `mimes:jpg,jpeg,png,webp,gif`) | `Concerns\KiemTraAnhTaiLen` (`image`, `mimes`) ✅ |
 
 ### `controllers/admin/ChucVuController.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
@@ -285,7 +298,7 @@ Ghi chú route:
 ### `models/DichVuModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R40 | 73 | Tên rỗng/>50 hoặc giá ≤ 0 / > 2.147.483.647 | Tên dịch vụ tối đa 50 ký tự và giá phải lớn hơn 0. | `DichVuRequest` | |
+| R40 | 73 | Tên rỗng/>50 hoặc giá ≤ 0 / > 2.147.483.647 | Tên dịch vụ tối đa 50 ký tự và giá phải lớn hơn 0. | `DichVuRequest` | `Admin\DichVuRequest` ✅ |
 
 ### `models/NhanVienModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
@@ -306,15 +319,15 @@ Ghi chú route:
 ### `models/LoaiPhongModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R49 | 65 | Tên rỗng/>20, giá ≤ 0 / > 2.147.483.647, mô tả >255 | Tên loại phòng tối đa 20 ký tự, mô tả tối đa 255 ký tự và giá phải lớn hơn 0. | `LoaiPhongRequest` | |
+| R49 | 65 | Tên rỗng/>20, giá ≤ 0 / > 2.147.483.647, mô tả >255 | Tên loại phòng tối đa 20 ký tự, mô tả tối đa 255 ký tự và giá phải lớn hơn 0. | `LoaiPhongRequest` | `Admin\LoaiPhongRequest` ✅ |
 
 ### `models/PhongModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R50 | 99 | Sửa: phòng không tồn tại | Phòng không tồn tại. | `PhongController@update` | |
+| R50 | 99 | Sửa: phòng không tồn tại | Phòng không tồn tại. | `PhongController@update` | `Route::resource('phong')->missing()` → "Không tìm thấy thông tin phòng." ✅ |
 | R51 | 102 | Sửa: phòng đang có đơn hoạt động mà đổi loại hoặc trạng thái | Phòng đang có lịch đặt; hãy xử lý đơn trước khi đổi loại hoặc trạng thái phòng. | Model `Phong` / `PhongController@update` | `Phong::kiemTraDoiLoaiHoacTrangThai` ✅ |
-| R52 | 158 | Trạng thái ngoài `Trống, Đã đặt, Đang thuê, Bảo trì` | Trạng thái phòng không hợp lệ. | `PhongRequest` (`in:`) — kèm sửa lỗi L1 | |
-| R53 | 161 | Loại phòng không tồn tại hoặc `DaXoa` | Loại phòng không tồn tại hoặc đã ngừng sử dụng. | `PhongRequest` (`exists` có điều kiện `DaXoa = 0`) | |
+| R52 | 158 | Trạng thái ngoài `Trống, Đã đặt, Đang thuê, Bảo trì` | Trạng thái phòng không hợp lệ. | `PhongRequest` (`in:`) — kèm sửa lỗi L1 | `Admin\StorePhongRequest` / `UpdatePhongRequest` (`Rule::in(Phong::TRANG_THAI)`) ✅ |
+| R53 | 161 | Loại phòng không tồn tại hoặc `DaXoa` | Loại phòng không tồn tại hoặc đã ngừng sử dụng. | `PhongRequest` (`exists` có điều kiện `DaXoa = 0`) | `Admin\StorePhongRequest` / `UpdatePhongRequest` (`exists` + `DaXoa = 0`) ✅ |
 
 ---
 
@@ -353,12 +366,12 @@ Ghi chú route:
 | `admin/auth/login.php` | `admin/auth/login.blade.php` | ✅ |
 | `admin/auth/change-password.php` | `admin/auth/change-password.blade.php` | ✅ |
 | `admin/dashboard/index.php` | `admin/dashboard/index.blade.php` | ⬜ |
-| `admin/phong/list.php` | `admin/phong/index.blade.php` | ⬜ |
-| `admin/phong/form.php` | `admin/phong/form.blade.php` | ⬜ |
-| `admin/loai-phong/list.php` | `admin/loai-phong/index.blade.php` | ⬜ |
-| `admin/loai-phong/form.php` | `admin/loai-phong/form.blade.php` | ⬜ |
-| `admin/dich-vu/list.php` | `admin/dich-vu/index.blade.php` | ⬜ |
-| `admin/dich-vu/form.php` | `admin/dich-vu/form.blade.php` | ⬜ |
+| `admin/phong/list.php` | `admin/phong/index.blade.php` | ✅ |
+| `admin/phong/form.php` | `admin/phong/form.blade.php` | ✅ |
+| `admin/loai-phong/list.php` | `admin/loai-phong/index.blade.php` | ✅ |
+| `admin/loai-phong/form.php` | `admin/loai-phong/form.blade.php` | ✅ |
+| `admin/dich-vu/list.php` | `admin/dich-vu/index.blade.php` | ✅ |
+| `admin/dich-vu/form.php` | `admin/dich-vu/form.blade.php` | ✅ |
 | `admin/khach-hang/list.php` | `admin/khach-hang/index.blade.php` | ⬜ |
 | `admin/khach-hang/history.php` | `admin/khach-hang/history.blade.php` | ⬜ |
 | `admin/nhan-vien/list.php` | `admin/nhan-vien/index.blade.php` | ⬜ |

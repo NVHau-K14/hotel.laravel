@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DichVuController;
+use App\Http\Controllers\Admin\LoaiPhongController;
+use App\Http\Controllers\Admin\PhongController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,12 +29,22 @@ Route::controller(AuthController::class)->group(function () {
 Route::middleware('auth:admin')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('quyen:DASHBOARD');
 
+    // Bản ghi không tồn tại → về danh sách kèm thông báo (giống bản gốc), không trả 404
+    Route::resource('loai-phong', LoaiPhongController::class)->except('show')
+        ->middleware('quyen:LOAI_PHONG')
+        ->missing(fn () => redirect()->route('admin.loai-phong.index')->thongBao('danger', 'Loại phòng không tồn tại.'));
+
+    Route::resource('phong', PhongController::class)->except('show')
+        ->middleware('quyen:PHONG')
+        ->missing(fn () => redirect()->route('admin.phong.index')->thongBao('danger', 'Không tìm thấy thông tin phòng.'));
+
+    Route::resource('dich-vu', DichVuController::class)->except('show')
+        ->middleware('quyen:DICH_VU')
+        ->missing(fn () => redirect()->route('admin.dich-vu.index')->thongBao('danger', 'Không tìm thấy dịch vụ.'));
+
     // TẠM THỜI (Giai đoạn 3): trang chờ cho các module, Giai đoạn 4 thay bằng controller thật
     $moduleChuaLam = [
-        'phong' => ['PHONG', 'Quản lý phòng'],
-        'loai-phong' => ['LOAI_PHONG', 'Quản lý loại phòng'],
         'dat-phong' => ['DAT_PHONG', 'Quản lý đặt phòng'],
-        'dich-vu' => ['DICH_VU', 'Quản lý dịch vụ'],
         'ct-dich-vu' => ['CT_DICH_VU', 'Chi tiết sử dụng dịch vụ'],
         'hoa-don' => ['HOA_DON', 'Quản lý hóa đơn'],
         'khach-hang' => ['KHACH_HANG', 'Quản lý khách hàng'],
