@@ -8,7 +8,7 @@
 |---|---|---|
 | 0 | Khảo sát, lập checklist | ✅ Xong (2026-10-15) |
 | 1 | Cấu hình, Migration, Seeder, tài nguyên tĩnh | ✅ Xong (2026-10-15) |
-| 2 | Model Eloquent | ⬜ |
+| 2 | Model Eloquent | ✅ Xong (2026-10-15) |
 | 3 | Auth, phân quyền, layout, helper, xử lý lỗi | ⬜ |
 | 4A | LoaiPhong, Phong, DichVu | ⬜ |
 | 4B | KhachHang, NhanVien, ChucVu | ⬜ |
@@ -48,6 +48,24 @@
   - `http://hotel.laravel.test/css/app.css`, `/Images/ChiTietPhong/Phong101/01.jpg`, `/Images/DichVu/Massage/service.jpg` → 200; trang `/` → 200.
 - Ghi chú: MySQL trên Windows có `lower_case_table_names = 1` → HeidiSQL hiện tên bảng chữ thường (`khachhang`), truy vấn không phân biệt hoa thường; code vẫn dùng tên viết hoa như SQL gốc.
 - Chưa làm (đúng kế hoạch, để Giai đoạn 3): xóa `app/Models/User.php`, `UserFactory`, sửa `config/auth.php`.
+
+### Kết quả Giai đoạn 2
+- [x] 12 model trong `app/Models`: `ChucVu`, `NhanVien` (Authenticatable, `$authPasswordName = "Password"`), `PhanCong` (BANGPHANCONG), `KhachHang` (Authenticatable, `MatKhau`), `LoaiPhong`, `Phong` (`$incrementing = false`), `DatPhong` (CTDATPHONG), `DichVu`, `CtDichVu`, `HoaDon`, `DanhGia` (CTDANHGIA, khóa `ID`), `Payment`. Đủ `$table`, `$primaryKey`, `$timestamps = false`, `$fillable`, `casts()`. `NhanVien`/`KhachHang` ẩn mật khẩu (`$hidden`), `$rememberTokenName = ""` (không dùng remember me). `KhachHang` không có `EmailConnexion` trong `$fillable`. `LoaiPhong.DaXoa` cast boolean, không dùng `SoftDeletes`.
+- [x] Hằng số trạng thái: `DatPhong::CHO_ADMIN_DUYET…DA_HUY`, `LUONG_TRANG_THAI`, `TRANG_THAI_GIU_PHONG`; `HoaDon::CHUA_THANH_TOAN/DA_THANH_TOAN`; `KhachHang::HOAT_DONG/KHOA`; `Phong::TRONG/DA_DAT/DANG_THUE/BAO_TRI` (+ `DANG_SU_DUNG` chỉ để đếm); `ChucVu::QUAN_LY`, `ChucVu::QUYEN` (13 quyền).
+- [x] Quan hệ: belongsTo / hasMany theo đủ 16 khóa ngoại; `DatPhong::dichVus()` ↔ `DichVu::datPhongs()` là `belongsToMany` qua `CTDICHVU` kèm `withPivot("MaCTDichVu","SoLuong","TongTienDichVu")`. `CHUCVU_QUYEN` đọc/ghi bằng query builder (`ChucVu::dsQuyen()`, `capNhatQuyen()` trong transaction).
+- [x] `CtDichVu`: `$primaryKey = null`, cập nhật/xóa bằng `capNhatTheoKhoa()` / `xoaTheoKhoa()` (where hai cột).
+- [x] `HoaDon.ChiTietJSON` cast `json:unicode` (giữ chữ có dấu như `JSON_UNESCAPED_UNICODE`). `DatPhong->GiaPhong` (accessor) = `GiaPhongDat ?? loaiPhong.GiaPhong`.
+- [x] Truy vấn gốc → scope/method: `Phong::loc()`, `Phong::conTrong()`, `Phong::demTheoTrangThai()`, `LoaiPhong::conHoatDong()`, `LoaiPhong::xoaHoacAn()`, `DatPhong::loc()`, `DatPhong::demTheoTrangThai()`, `KhachHang::timKiem()`, `PhanCong::loc()`, `HoaDon::layTheoDon()`, `CtDichVu::kemDonGia()/cuaDon()/danhSach()/timTheoKhoa()`, `DanhGia::phongCoTheDanhGia()/donCoTheDanhGia()`, `NhanVien::coQuyen()`.
+- [x] `app/Services`: `DatPhongService` (validateStay, createBooking, updateStatus, lockRoom, lockBooking, assertAvailable, assertServiceEditable, syncRoomStatus), `HoaDonService` (calculateBookingTotal, checkout, createOrUpdateInvoice, payInvoice), `CtDichVuService` (save, addToBooking, delete), `ThongKeService` (getSummary, getMonthlyRevenue). Dùng `DB::transaction` + `lockForUpdate()` đúng các chỗ bản gốc dùng `db_transaction` + `FOR UPDATE`.
+- Không chuyển (bản gốc không nơi nào gọi): `KhachHangModel::updatePassword`, `KhachHangModel::getByEmail`, `PhongModel::updateStatus`. Tham số `$tongTien` của `CtDichVuModel::save` không được dùng trong bản gốc → bỏ.
+- **Kiểm tra (kết quả thật, script chạy qua bootstrap Laravel; phần nghiệp vụ trong transaction rồi ROLLBACK):**
+  - Đơn #2 → khách "Lê Văn Tí", phòng 102 / "Bình Dân", giá 300.000 (GiaPhongDat NULL → giá loại), nhân viên "Ngô Quốc Bình", hóa đơn #1, #2, 1 đánh giá; hóa đơn chính = #2.
+  - `coQuyen`: viet (Quản lý) có THONG_KE; binh có HOA_DON, không có PHONG; vung có DASHBOARD, không có PHONG.
+  - Phòng trống 07→09/05/2026: loại đúng 102, 103, 201. Đếm phòng 15 trống; đơn 5 DA_XAC_NHAN.
+  - Kịch bản nghiệm thu: teo đặt 104 hôm nay → +2 ngày → `CHO_ADMIN_DUYET`, `GiaPhongDat = 300000`; duyệt → phòng "Đã đặt"; nhận phòng → "Đang thuê"; Ăn sáng × 2 + Massage × 1; trả phòng → hóa đơn `CHUA_THANH_TOAN` **1.260.000**; thanh toán → `DA_THANH_TOAN`, đơn `DA_HOAN_THANH`, `payment_status = DA_THANH_TOAN`, phòng "Trống". Đặt trùng ngày 104 → bị chặn.
+  - Hóa đơn tự tính lại khi thêm/xóa dịch vụ (1.290.000 → 1.260.000); sau thanh toán đọc lại từ snapshot.
+  - Đã thử chặn: R01, R02, R11, R12, R13, R16, R20, R21, R23, R26, R28, R29, R31, R36, R38, R39, R51 → đúng câu thông báo gốc.
+  - Sau ROLLBACK: 5 đơn, 5 hóa đơn, 0 CTDICHVU, 5 khách, phòng 104 "Trống" → DB không đổi.
 
 ---
 
@@ -171,8 +189,8 @@ Ghi chú route:
 ### `config/helpers.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R01 | 68 | `validate_stay`: ngày sai định dạng hoặc ngày trả ≤ ngày nhận (dùng ở đặt phòng, chuyển trạng thái, tính hóa đơn, lọc phòng) | Ngày nhận/trả không hợp lệ. Ngày trả phải sau ngày nhận. | Form Request (`date`, `after:ngayNhan`) + `DatPhongService` | |
-| R02 | 71 | `validate_stay`: ngày nhận < hôm nay (trừ khi `allowPast`) | Ngày nhận phòng không được nằm trong quá khứ. | Form Request (`after_or_equal:today`) + `DatPhongService::createBooking` | |
+| R01 | 68 | `validate_stay`: ngày sai định dạng hoặc ngày trả ≤ ngày nhận (dùng ở đặt phòng, chuyển trạng thái, tính hóa đơn, lọc phòng) | Ngày nhận/trả không hợp lệ. Ngày trả phải sau ngày nhận. | Form Request (`date`, `after:ngayNhan`) + `DatPhongService` | `DatPhongService::validateStay` ✅ (Form Request: chờ GĐ 4D/5) |
+| R02 | 71 | `validate_stay`: ngày nhận < hôm nay (trừ khi `allowPast`) | Ngày nhận phòng không được nằm trong quá khứ. | Form Request (`after_or_equal:today`) + `DatPhongService::createBooking` | `DatPhongService::validateStay` ✅ (Form Request: chờ GĐ 4D/5) |
 | R03 | 77 | `validate_customer`: họ tên rỗng/>255 hoặc SĐT không khớp `/^[+0-9][0-9 .()-]{7,19}$/` | Vui lòng nhập họ tên và số điện thoại hợp lệ. | Form Request đặt phòng/đăng ký (`regex`, `max`) | |
 | R04 | 80 | `validate_customer`: email sai/ >254, địa chỉ >255, CMND >20 | Email, địa chỉ hoặc số giấy tờ không hợp lệ hoặc quá dài. | Form Request đặt phòng/đăng ký | |
 | R05 | 93 | `upload_image`: lỗi upload hoặc > 5 MB | Không tải được ảnh. Vui lòng chọn ảnh tối đa 5 MB. | Form Request Phong/DichVu (`max:5120`) | |
@@ -186,58 +204,58 @@ Ghi chú route:
 ### `controllers/admin/DatPhongController.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R08 | 82 | checkout: đơn không tồn tại hoặc không ở `DANG_SU_DUNG` | Chỉ trả phòng cho đơn đang sử dụng. | `DatPhongController@checkout` / `HoaDonService` | |
+| R08 | 82 | checkout: đơn không tồn tại hoặc không ở `DANG_SU_DUNG` | Chỉ trả phòng cho đơn đang sử dụng. | `DatPhongController@checkout` / `HoaDonService` | `HoaDonService::checkout` ✅ |
 
 ### `models/DatPhongModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R09 | 90 | createBooking: trạng thái khởi tạo ngoài `CHO_ADMIN_DUYET, DA_XAC_NHAN, DANG_SU_DUNG` | Trạng thái đặt phòng không hợp lệ. | `StoreDatPhongRequest` (`in:`) + `DatPhongService::createBooking` | |
-| R10 | 91 | createBooking `DANG_SU_DUNG` mà ngày nhận ≠ hôm nay | Chỉ nhận phòng trong ngày bắt đầu lưu trú. | `DatPhongService::createBooking` | |
-| R11 | 98 | Khách không tồn tại hoặc `KHOA` | Khách hàng không tồn tại hoặc đã bị khóa. | `DatPhongService::createBooking` | |
-| R12 | 128 | Chuyển trạng thái sai luồng (`CHO_ADMIN_DUYET→DA_XAC_NHAN/DA_HUY`, `DA_XAC_NHAN→DANG_SU_DUNG/DA_HUY`, `DANG_SU_DUNG→DA_HOAN_THANH`) | Không thể chuyển trạng thái của đơn đặt phòng này. | `DatPhongService::updateStatus` | |
-| R13 | 131 | Sang `DA_XAC_NHAN`/`DANG_SU_DUNG` khi ngày trả ≤ hôm nay | Đơn đặt phòng đã quá ngày trả. | `DatPhongService::updateStatus` | |
-| R14 | 135 | Nhận phòng trước ngày nhận | Chưa đến ngày nhận phòng. | `DatPhongService::updateStatus` | |
-| R15 | 138 | Nhận phòng khi phòng còn đơn khác `DANG_SU_DUNG` | Phòng còn khách chưa trả phòng. | `DatPhongService::updateStatus` | |
-| R16 | 143 | Sang `DA_HOAN_THANH` khi chưa có hóa đơn `DA_THANH_TOAN` | Cần thanh toán hóa đơn trước khi hoàn tất đơn. | `DatPhongService::updateStatus` | |
-| R17 | 156 | lockRoom: phòng không tồn tại | Phòng không tồn tại. | `DatPhongService::lockRoom` (`lockForUpdate`) | |
-| R18 | 162 | lockBooking: đơn không tồn tại | Đơn đặt phòng không tồn tại. | `DatPhongService::lockBooking` (`lockForUpdate`) | |
-| R19 | 171 | Phòng `Bảo trì` hoặc loại phòng `DaXoa` | Phòng đang bảo trì hoặc loại phòng đã ngừng sử dụng. | `DatPhongService::assertAvailable` | |
-| R20 | 174 | Trùng lịch (đơn chờ duyệt/đã xác nhận/đang ở, `NgayNhan < trả` và `NgayTra > nhận`) | Phòng đã có lịch đặt trong khoảng ngày này. Vui lòng chọn ngày hoặc phòng khác. | `DatPhongService::assertAvailable` | |
-| R21 | 179 | Sửa dịch vụ khi đơn không ở `DA_XAC_NHAN`/`DANG_SU_DUNG` | Chỉ thêm hoặc sửa dịch vụ cho đơn đã xác nhận hoặc đang sử dụng. | `DatPhongService::assertServiceEditable` | |
-| R22 | 182 | Sửa dịch vụ khi đơn đã có hóa đơn `DA_THANH_TOAN` | Không được sửa dịch vụ của hóa đơn đã thanh toán. | `DatPhongService::assertServiceEditable` | |
+| R09 | 90 | createBooking: trạng thái khởi tạo ngoài `CHO_ADMIN_DUYET, DA_XAC_NHAN, DANG_SU_DUNG` | Trạng thái đặt phòng không hợp lệ. | `StoreDatPhongRequest` (`in:`) + `DatPhongService::createBooking` | `DatPhongService::createBooking` ✅ (Form Request: chờ GĐ 4D) |
+| R10 | 91 | createBooking `DANG_SU_DUNG` mà ngày nhận ≠ hôm nay | Chỉ nhận phòng trong ngày bắt đầu lưu trú. | `DatPhongService::createBooking` | `DatPhongService::createBooking` ✅ |
+| R11 | 98 | Khách không tồn tại hoặc `KHOA` | Khách hàng không tồn tại hoặc đã bị khóa. | `DatPhongService::createBooking` | `DatPhongService::createBooking` ✅ |
+| R12 | 128 | Chuyển trạng thái sai luồng (`CHO_ADMIN_DUYET→DA_XAC_NHAN/DA_HUY`, `DA_XAC_NHAN→DANG_SU_DUNG/DA_HUY`, `DANG_SU_DUNG→DA_HOAN_THANH`) | Không thể chuyển trạng thái của đơn đặt phòng này. | `DatPhongService::updateStatus` | `DatPhongService::updateStatus` ✅ |
+| R13 | 131 | Sang `DA_XAC_NHAN`/`DANG_SU_DUNG` khi ngày trả ≤ hôm nay | Đơn đặt phòng đã quá ngày trả. | `DatPhongService::updateStatus` | `DatPhongService::updateStatus` ✅ |
+| R14 | 135 | Nhận phòng trước ngày nhận | Chưa đến ngày nhận phòng. | `DatPhongService::updateStatus` | `DatPhongService::updateStatus` ✅ |
+| R15 | 138 | Nhận phòng khi phòng còn đơn khác `DANG_SU_DUNG` | Phòng còn khách chưa trả phòng. | `DatPhongService::updateStatus` | `DatPhongService::updateStatus` ✅ |
+| R16 | 143 | Sang `DA_HOAN_THANH` khi chưa có hóa đơn `DA_THANH_TOAN` | Cần thanh toán hóa đơn trước khi hoàn tất đơn. | `DatPhongService::updateStatus` | `DatPhongService::updateStatus` ✅ |
+| R17 | 156 | lockRoom: phòng không tồn tại | Phòng không tồn tại. | `DatPhongService::lockRoom` (`lockForUpdate`) | `DatPhongService::lockRoom` ✅ |
+| R18 | 162 | lockBooking: đơn không tồn tại | Đơn đặt phòng không tồn tại. | `DatPhongService::lockBooking` (`lockForUpdate`) | `DatPhongService::lockBooking` ✅ |
+| R19 | 171 | Phòng `Bảo trì` hoặc loại phòng `DaXoa` | Phòng đang bảo trì hoặc loại phòng đã ngừng sử dụng. | `DatPhongService::assertAvailable` | `DatPhongService::assertAvailable` ✅ |
+| R20 | 174 | Trùng lịch (đơn chờ duyệt/đã xác nhận/đang ở, `NgayNhan < trả` và `NgayTra > nhận`) | Phòng đã có lịch đặt trong khoảng ngày này. Vui lòng chọn ngày hoặc phòng khác. | `DatPhongService::assertAvailable` | `DatPhongService::assertAvailable` ✅ |
+| R21 | 179 | Sửa dịch vụ khi đơn không ở `DA_XAC_NHAN`/`DANG_SU_DUNG` | Chỉ thêm hoặc sửa dịch vụ cho đơn đã xác nhận hoặc đang sử dụng. | `DatPhongService::assertServiceEditable` | `DatPhongService::assertServiceEditable` ✅ |
+| R22 | 182 | Sửa dịch vụ khi đơn đã có hóa đơn `DA_THANH_TOAN` | Không được sửa dịch vụ của hóa đơn đã thanh toán. | `DatPhongService::assertServiceEditable` | `DatPhongService::assertServiceEditable` ✅ |
 
 ### `models/CtDichVuModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R23 | 19 | save: số lượng < 1 hoặc > 10.000 (kể cả tổng sau khi cộng dồn) | Số lượng dịch vụ phải từ 1 đến 10.000. | Form Request (`between:1,10000`) + `CtDichVuService::save` | |
-| R24 | 23 | Dịch vụ không tồn tại | Dịch vụ không tồn tại. | `CtDichVuService::save` | |
-| R25 | 27 | Tổng tiền dịch vụ > 2.147.483.647 | Tổng tiền dịch vụ vượt giới hạn cho phép. | `CtDichVuService::save` | |
-| R26 | 43 | addToBooking: số lượng < 1 | Số lượng dịch vụ phải lớn hơn 0. | Form Request (`min:1`) + `CtDichVuService::addToBooking` | |
+| R23 | 19 | save: số lượng < 1 hoặc > 10.000 (kể cả tổng sau khi cộng dồn) | Số lượng dịch vụ phải từ 1 đến 10.000. | Form Request (`between:1,10000`) + `CtDichVuService::save` | `CtDichVuService::save` ✅ (Form Request: chờ GĐ 4D) |
+| R24 | 23 | Dịch vụ không tồn tại | Dịch vụ không tồn tại. | `CtDichVuService::save` | `CtDichVuService::save` ✅ |
+| R25 | 27 | Tổng tiền dịch vụ > 2.147.483.647 | Tổng tiền dịch vụ vượt giới hạn cho phép. | `CtDichVuService::save` | `CtDichVuService::save` ✅ |
+| R26 | 43 | addToBooking: số lượng < 1 | Số lượng dịch vụ phải lớn hơn 0. | Form Request (`min:1`) + `CtDichVuService::addToBooking` | `CtDichVuService::addToBooking` ✅ (Form Request: chờ GĐ 4D) |
 
 ### `models/DanhGiaModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
 | R27 | 48 | create: nội dung rỗng/>255 hoặc ngày sai | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` / `ReviewRequest` | |
-| R28 | 51 | Đánh giá gắn đơn: đơn phải `DA_HOAN_THANH`, đúng khách, đúng phòng | Chỉ đánh giá lần lưu trú đã hoàn tất của chính bạn. | Model `DanhGia` / `ReviewController@store` (trong transaction, khóa đơn) | |
-| R29 | 54 | Đơn đã có đánh giá | Bạn đã đánh giá lần lưu trú này. | như R28 | |
+| R28 | 51 | Đánh giá gắn đơn: đơn phải `DA_HOAN_THANH`, đúng khách, đúng phòng | Chỉ đánh giá lần lưu trú đã hoàn tất của chính bạn. | Model `DanhGia` / `ReviewController@store` (trong transaction, khóa đơn) | `DanhGia::taoDanhGia` ✅ |
+| R29 | 54 | Đơn đã có đánh giá | Bạn đã đánh giá lần lưu trú này. | như R28 | `DanhGia::taoDanhGia` ✅ |
 | R30 | 80 | update: như R27 | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` | |
-| R31 | 82 | update: đánh giá gắn đơn không được đổi phòng | Không thể chuyển đánh giá của khách sang phòng khác. | `DanhGiaController@update` / model | |
+| R31 | 82 | update: đánh giá gắn đơn không được đổi phòng | Không thể chuyển đánh giá của khách sang phòng khác. | `DanhGiaController@update` / model | `DanhGia::capNhat` ✅ |
 
 ### `models/HoaDonModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R32 | 105 | Lập hóa đơn khi đơn không ở `DANG_SU_DUNG`/`DA_XAC_NHAN` | Không thể lập hóa đơn cho đơn chưa xác nhận, đã hủy hoặc đã kết thúc. | `HoaDonService::createOrUpdateInvoice` | |
-| R33 | 108 | Tổng hóa đơn > 2.147.483.647 (lập) | Tổng hóa đơn vượt giới hạn cho phép. | `HoaDonService::createOrUpdateInvoice` | |
-| R34 | 126 | Thanh toán: hóa đơn không tồn tại | Hóa đơn không tồn tại. | `HoaDonService::payInvoice` | |
-| R35 | 132 | Đơn đã thanh toán bằng hóa đơn khác | Đơn này đã được thanh toán bằng hóa đơn khác. | `HoaDonService::payInvoice` | |
-| R36 | 133 | Thanh toán khi đơn không ở `DANG_SU_DUNG` | Chỉ thanh toán trả phòng cho đơn đang sử dụng. | `HoaDonService::payInvoice` | |
-| R37 | 136 | Tổng hóa đơn > 2.147.483.647 (thanh toán) | Tổng hóa đơn vượt giới hạn cho phép. | `HoaDonService::payInvoice` | |
+| R32 | 105 | Lập hóa đơn khi đơn không ở `DANG_SU_DUNG`/`DA_XAC_NHAN` | Không thể lập hóa đơn cho đơn chưa xác nhận, đã hủy hoặc đã kết thúc. | `HoaDonService::createOrUpdateInvoice` | `HoaDonService::createOrUpdateInvoice` ✅ |
+| R33 | 108 | Tổng hóa đơn > 2.147.483.647 (lập) | Tổng hóa đơn vượt giới hạn cho phép. | `HoaDonService::createOrUpdateInvoice` | `HoaDonService::createOrUpdateInvoice` ✅ |
+| R34 | 126 | Thanh toán: hóa đơn không tồn tại | Hóa đơn không tồn tại. | `HoaDonService::payInvoice` | `HoaDonService::payInvoice` ✅ |
+| R35 | 132 | Đơn đã thanh toán bằng hóa đơn khác | Đơn này đã được thanh toán bằng hóa đơn khác. | `HoaDonService::payInvoice` | `HoaDonService::payInvoice` ✅ |
+| R36 | 133 | Thanh toán khi đơn không ở `DANG_SU_DUNG` | Chỉ thanh toán trả phòng cho đơn đang sử dụng. | `HoaDonService::payInvoice` | `HoaDonService::payInvoice` ✅ |
+| R37 | 136 | Tổng hóa đơn > 2.147.483.647 (thanh toán) | Tổng hóa đơn vượt giới hạn cho phép. | `HoaDonService::payInvoice` | `HoaDonService::payInvoice` ✅ |
 
 ### `models/KhachHangModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R38 | 52 | Tạo khách: SĐT hoặc email (khác rỗng) đã có | Số điện thoại hoặc email đã được đăng ký. Vui lòng đăng nhập tài khoản này. | Model `KhachHang` (tạo khách, dùng cho đăng ký + khách vãng lai) | |
-| R39 | 73 | Cập nhật khách: SĐT/email thuộc tài khoản khác | Số điện thoại hoặc email đã thuộc tài khoản khác. | Model `KhachHang` (cập nhật khi đặt phòng) | |
+| R38 | 52 | Tạo khách: SĐT hoặc email (khác rỗng) đã có | Số điện thoại hoặc email đã được đăng ký. Vui lòng đăng nhập tài khoản này. | Model `KhachHang` (tạo khách, dùng cho đăng ký + khách vãng lai) | `KhachHang::taoKhachHang` ✅ |
+| R39 | 73 | Cập nhật khách: SĐT/email thuộc tài khoản khác | Số điện thoại hoặc email đã thuộc tài khoản khác. | Model `KhachHang` (cập nhật khi đặt phòng) | `KhachHang::capNhatThongTin` ✅ |
 
 ### `models/DichVuModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
@@ -269,7 +287,7 @@ Ghi chú route:
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
 | R50 | 99 | Sửa: phòng không tồn tại | Phòng không tồn tại. | `PhongController@update` | |
-| R51 | 102 | Sửa: phòng đang có đơn hoạt động mà đổi loại hoặc trạng thái | Phòng đang có lịch đặt; hãy xử lý đơn trước khi đổi loại hoặc trạng thái phòng. | Model `Phong` / `PhongController@update` | |
+| R51 | 102 | Sửa: phòng đang có đơn hoạt động mà đổi loại hoặc trạng thái | Phòng đang có lịch đặt; hãy xử lý đơn trước khi đổi loại hoặc trạng thái phòng. | Model `Phong` / `PhongController@update` | `Phong::kiemTraDoiLoaiHoacTrangThai` ✅ |
 | R52 | 158 | Trạng thái ngoài `Trống, Đã đặt, Đang thuê, Bảo trì` | Trạng thái phòng không hợp lệ. | `PhongRequest` (`in:`) — kèm sửa lỗi L1 | |
 | R53 | 161 | Loại phòng không tồn tại hoặc `DaXoa` | Loại phòng không tồn tại hoặc đã ngừng sử dụng. | `PhongRequest` (`exists` có điều kiện `DaXoa = 0`) | |
 
