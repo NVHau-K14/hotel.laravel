@@ -7,7 +7,7 @@
 | Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
 | 0 | Khảo sát, lập checklist | ✅ Xong (2026-10-15) |
-| 1 | Cấu hình, Migration, Seeder, tài nguyên tĩnh | ⬜ |
+| 1 | Cấu hình, Migration, Seeder, tài nguyên tĩnh | ✅ Xong (2026-10-15) |
 | 2 | Model Eloquent | ⬜ |
 | 3 | Auth, phân quyền, layout, helper, xử lý lỗi | ⬜ |
 | 4A | LoaiPhong, Phong, DichVu | ⬜ |
@@ -22,10 +22,32 @@
 ### Ghi chú khảo sát (Giai đoạn 0)
 - Môi trường đã kiểm tra: PHP 8.3.30, Composer 2.9.4, Laravel 13.35.0. Laravel 13 hỗ trợ `protected $authPasswordName` (đã xem `vendor/.../Auth/Authenticatable.php`).
 - Project Laravel ban đầu: skeleton mặc định (`User`, `UserFactory`, migration users/cache/jobs, `welcome.blade.php`, `.env` dùng SQLite, `APP_LOCALE=en`).
-- `CLAUDE.md` / `AGENTS.md` yêu cầu cài **Laravel Boost** → **chưa cài**, vì trái quy tắc 6 của kế hoạch (không cài package khi chưa hỏi). Chờ chủ dự án quyết định.
-- File `structure_hotel_laravel.md` (~958 KB, cây thư mục gồm cả `vendor/`) nằm ở gốc project → đề xuất xóa ở Giai đoạn 7.
+- `CLAUDE.md` / `AGENTS.md` yêu cầu cài **Laravel Boost** → **không cài** (chủ dự án quyết định 2026-10-15: bỏ qua phần yêu cầu cài Boost trong `CLAUDE.md`/`AGENTS.md`).
+- File `structure_hotel_laravel.md` (~958 KB, cây thư mục gồm cả `vendor/`) nằm ở gốc project → **xóa ở Giai đoạn 7** (đã duyệt).
 - `hotel_php/css/app.css` tự `@import` Bootstrap 5.3.3, Font Awesome 6.5.2 và Google Font Be Vietnam Pro → layout khách hàng không cần thẻ `<link>` Bootstrap riêng (bản gốc cũng không có).
 - `hotel_php/Images/` có thêm `Phong106`, `Phong206`, `DichVu/DichVu6` không có trong SQL → vẫn copy đủ.
+
+### Kết quả Giai đoạn 1
+- [x] `.env` / `.env.example`: MySQL `hotel_laravel` (root, mật khẩu rỗng), `APP_LOCALE=vi`, `APP_TIMEZONE=Asia/Ho_Chi_Minh`, `APP_URL=http://hotel.laravel.test`, `APP_FAKER_LOCALE=vi_VN`.
+- [x] `config/app.php`: `timezone` đọc `APP_TIMEZONE`. `config/database.php` (mysql): `timezone => '+07:00'`, `isolation_level => 'READ COMMITTED'` (giống `hotel_php/config/database.php`). Kiểm tra bằng tinker: `NOW()` theo giờ VN, `@@session.time_zone = +07:00`, `@@transaction_isolation = READ-COMMITTED`.
+- [x] Database `hotel_laravel` đã có sẵn (rỗng, collation `utf8mb4_0900_ai_ci`) → đổi sang `utf8mb4_unicode_ci`.
+- [x] Migration mặc định: đổi tên `create_users_table` → `create_sessions_table`, chỉ còn `sessions`; giữ `cache`, `jobs`. Bỏ `users`, `password_reset_tokens`.
+- [x] 13 migration (`2026_10_15_000001` … `000013`), mỗi bảng một file, có `down()`.
+- [x] 10 seeder cho 10 bảng có dữ liệu + `DatabaseSeeder` gọi theo thứ tự khóa ngoại. `BANGPHANCONG`, `PAYMENTS`, `CTDICHVU` không có dữ liệu mẫu nên không có seeder. Mật khẩu `Hash::make('1')`.
+- [x] Đã xóa `database/database.sqlite`.
+- [x] Copy `css/app.css` → `public/css/app.css` (trùng hash), `Images/` → `public/Images/` (72 file, đủ dung lượng). Tạo `public/uploads/{phong,dichvu}/.gitkeep`; `.gitignore` bỏ qua file upload lúc chạy.
+- **Kiểm tra (kết quả thật):**
+  - `php artisan migrate:fresh --seed` chạy không lỗi, **chạy 2 lần liên tiếp đều thành công**; `migrate:status` = 16 migration đã chạy.
+  - Số dòng: CHUCVU 4, NHANVIEN 4, CHUCVU_QUYEN 22, LOAIPHONG 3, PHONG 15, DICHVU 5, KHACHHANG 5, CTDATPHONG 5, CTDANHGIA 2, HOADON 5, BANGPHANCONG 0, PAYMENTS 0, CTDICHVU 0 → **khớp**.
+  - Nạp bản sao `QuanLyKhachSan.sql` vào DB tạm `hotel_sql_goc` (đã xóa sau khi so) để so với `hotel_laravel`:
+    - Cột: giống hệt kiểu, độ dài, null, mặc định, generated; khác duy nhất là cột khóa `int` → `int unsigned` (theo kế hoạch: `increments` + `unsignedInteger`).
+    - 16 khóa ngoại trùng tên, bảng tham chiếu và luật xóa (chỉ `FK_CHUCVU_QUYEN_CHUCVU` là CASCADE). Khóa chính, `uq_staff_username`, `uq_customer_phone`, `uq_customer_email` trùng.
+    - Dữ liệu 10 bảng (trừ cột mật khẩu): `EXCEPT` hai chiều đều 0 dòng lệch.
+  - `EmailConnexion`: thêm 2 khách `Email=''` → được (cột sinh = NULL); thêm khách trùng `teo@gmail.com` → lỗi 1062 `uq_customer_email`; ghi thẳng vào `EmailConnexion` → lỗi 3105. Thử trong transaction rồi rollback, bảng vẫn 5 khách.
+  - `Hash::check('1', …)` đúng cho `viet` và `teo@gmail.com`.
+  - `http://hotel.laravel.test/css/app.css`, `/Images/ChiTietPhong/Phong101/01.jpg`, `/Images/DichVu/Massage/service.jpg` → 200; trang `/` → 200.
+- Ghi chú: MySQL trên Windows có `lower_case_table_names = 1` → HeidiSQL hiện tên bảng chữ thường (`khachhang`), truy vấn không phân biệt hoa thường; code vẫn dùng tên viết hoa như SQL gốc.
+- Chưa làm (đúng kế hoạch, để Giai đoạn 3): xóa `app/Models/User.php`, `UserFactory`, sửa `config/auth.php`.
 
 ---
 
@@ -109,7 +131,7 @@ Quy ước:
 | A66 | danh-gia / edit (POST) | PUT | `/admin/danh-gia/{danh_gia}` | `admin.danh-gia.update` | `DanhGiaController@update` | DANH_GIA | ⬜ |
 | A67 | danh-gia / delete | DELETE | `/admin/danh-gia/{danh_gia}` | `admin.danh-gia.destroy` | `DanhGiaController@destroy` | DANH_GIA | ⬜ |
 | A68 | thong-ke / index (`?year`) | GET | `/admin/thong-ke` | `admin.thong-ke.index` | `ThongKeController@index` | THONG_KE | ⬜ |
-| A69 | `c` không hợp lệ → về dashboard | — | (Laravel mặc định trả 404; xem lỗi L7) | — | — | — | ⬜ |
+| A69 | `c` không hợp lệ → về dashboard | — | 404 mặc định của Laravel (đã duyệt, L7) | — | — | — | ⬜ |
 
 ### 1.2 Khách hàng (`index.php`)
 
@@ -350,12 +372,12 @@ Quy ước Blade: lỗi Form Request hiển thị đúng chỗ `alert alert-dang
 | # | Mô tả | Đề xuất | Trạng thái |
 |---|---|---|---|
 | L1 | `views/admin/phong/form.php` có lựa chọn "Đang sử dụng" nhưng `PhongModel` chỉ nhận 4 trạng thái → lưu báo "Trạng thái phòng không hợp lệ." (mục 5 kế hoạch). | Form chỉ còn `Trống, Đã đặt, Đang thuê, Bảo trì`; thống kê/badge vẫn đếm "Đang sử dụng". | Đã duyệt sẵn, sửa ở 4A |
-| L2 | `views/client/account/booking-detail.php`: bảng màu/nhãn trạng thái dùng `DA_THANH_TOAN`, `DA_TRA_PHONG` (không tồn tại) và thiếu `DA_HOAN_THANH` → đơn hoàn tất hiện mã thô "DA_HOAN_THANH" với badge xám. | Thêm `DA_HOAN_THANH` → "Hoàn tất", `bg-success` (giống `history.php`). | Chờ xác nhận |
-| L3 | `views/client/account/history.php`: dòng "chưa có đơn" dùng `colspan="5"` nhưng bảng có 6 cột. | Đổi thành `colspan="6"`. | Chờ xác nhận |
-| L4 | `views/admin/khach-hang/history.php` hiện mã trạng thái thô (vd. `DA_XAC_NHAN`) trong badge xám. | Giữ nguyên (chỉ là hiển thị), trừ khi muốn dùng nhãn tiếng Việt. | Chờ xác nhận |
+| L2 | `views/client/account/booking-detail.php`: bảng màu/nhãn trạng thái dùng `DA_THANH_TOAN`, `DA_TRA_PHONG` (không tồn tại) và thiếu `DA_HOAN_THANH` → đơn hoàn tất hiện mã thô "DA_HOAN_THANH" với badge xám. | Thêm `DA_HOAN_THANH` → "Hoàn tất", `bg-success` (giống `history.php`). | Đã duyệt: sửa ở GĐ 5 |
+| L3 | `views/client/account/history.php`: dòng "chưa có đơn" dùng `colspan="5"` nhưng bảng có 6 cột. | Đổi thành `colspan="6"`. | Đã duyệt: sửa ở GĐ 5 |
+| L4 | `views/admin/khach-hang/history.php` hiện mã trạng thái thô (vd. `DA_XAC_NHAN`) trong badge xám. | Giữ nguyên (chỉ là hiển thị), trừ khi muốn dùng nhãn tiếng Việt. | Đã duyệt: giữ nguyên |
 | L5 | Trang `ct-dich-vu&a=addToBooking` (`them-vao-don.php`) không được link từ đâu; tham số `back=detail` của `ct-dich-vu&a=delete` cũng không view nào dùng. | Vẫn giữ route và tham số để đủ chức năng gốc. | Ghi nhận |
 | L6 | Đăng nhập admin luôn chuyển về dashboard; chức vụ không có quyền DASHBOARD sẽ thấy 403 ngay sau đăng nhập (dữ liệu mẫu: cả 4 chức vụ đều có DASHBOARD nên không gặp). | Giữ nguyên. | Ghi nhận |
-| L7 | `admin/index.php` với `c` không hợp lệ → chuyển về dashboard. Laravel mặc định trả 404. | Đề xuất dùng 404 chuẩn của Laravel (hoặc thêm route bắt `/admin/{any}` chuyển về dashboard nếu muốn giống hệt). | Chờ xác nhận |
+| L7 | `admin/index.php` với `c` không hợp lệ → chuyển về dashboard. Laravel mặc định trả 404. | Đề xuất dùng 404 chuẩn của Laravel (hoặc thêm route bắt `/admin/{any}` chuyển về dashboard nếu muốn giống hệt). | Đã duyệt: dùng 404 |
 | L8 | Trang chủ / danh sách phòng (khi không lọc ngày) vẫn hiện phòng thuộc loại phòng đã xóa mềm, có nút "Đặt phòng"; khi gửi thì bị chặn bằng R19. | Giữ nguyên như bản gốc. | Ghi nhận |
-| L9 | Admin tạo đơn với trạng thái "Khách nhận phòng ngay" (`DANG_SU_DUNG`) không chạy kiểm tra R15 "Phòng còn khách chưa trả phòng" (chỉ có ở `updateStatus`). Nếu khách cũ ở quá ngày trả mà vẫn `DANG_SU_DUNG`, có thể check-in khách mới cùng phòng. | Giữ nguyên, hoặc thêm R15 vào `createBooking` khi trạng thái là `DANG_SU_DUNG`. | Chờ xác nhận |
-| L10 | Kế hoạch Giai đoạn 5 ghi "chi tiết phòng (ảnh + đánh giá)", nhưng `room-detail.php` gốc chỉ hiện 1 ảnh đại diện, không có thư viện ảnh và không có đánh giá. | Làm đúng như bản gốc (chỉ ảnh đại diện). | Chờ xác nhận |
+| L9 | Admin tạo đơn với trạng thái "Khách nhận phòng ngay" (`DANG_SU_DUNG`) không chạy kiểm tra R15 "Phòng còn khách chưa trả phòng" (chỉ có ở `updateStatus`). Nếu khách cũ ở quá ngày trả mà vẫn `DANG_SU_DUNG`, có thể check-in khách mới cùng phòng. | Giữ nguyên, hoặc thêm R15 vào `createBooking` khi trạng thái là `DANG_SU_DUNG`. | Đã duyệt: giữ nguyên |
+| L10 | Kế hoạch Giai đoạn 5 ghi "chi tiết phòng (ảnh + đánh giá)", nhưng `room-detail.php` gốc chỉ hiện 1 ảnh đại diện, không có thư viện ảnh và không có đánh giá. | Làm đúng như bản gốc (chỉ ảnh đại diện). | Đã duyệt: như bản gốc |

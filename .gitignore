@@ -25,3 +25,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Ảnh người dùng tải lên lúc chạy (giữ thư mục bằng .gitkeep)
+/public/uploads/phong/*
+!/public/uploads/phong/.gitkeep
+/public/uploads/dichvu/*
+!/public/uploads/dichvu/.gitkeep

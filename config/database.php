@@ -59,6 +59,9 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Giống bản gốc: SET time_zone = '+07:00' và READ COMMITTED (config/database.php của hotel_php)
+            'timezone' => env('DB_TIMEZONE', '+07:00'),
+            'isolation_level' => 'READ COMMITTED',
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
