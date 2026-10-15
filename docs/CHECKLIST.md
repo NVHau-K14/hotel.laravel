@@ -14,7 +14,7 @@
 | 4B | KhachHang, NhanVien, ChucVu | ✅ Xong (2026-10-15) |
 | 4C | PhanCong, DanhGia | ✅ Xong (2026-10-15) |
 | 4D | DatPhong, CtDichVu, HoaDon | ✅ Xong (2026-10-15) |
-| 4E | Dashboard, ThongKe | ⬜ |
+| 4E | Dashboard, ThongKe | ✅ Xong (2026-10-15) |
 | 5 | Phía khách hàng | ⬜ |
 | 6 | Kiểm tra toàn bộ + Feature test | ⬜ |
 | 7 | Dọn dẹp, README | ⬜ |
@@ -79,7 +79,7 @@
 - [x] Layout `admin/layouts/app.blade.php` + `nav.blade.php` (ẩn nav khi `hideNav`), `client/layouts/app.blade.php`; trang lỗi `errors/403, 404, 405, 419, 422` tiếng Việt (`errors/khung.blade.php`).
 - [x] Form Request: `Admin\DangNhapRequest`, `Admin\DoiMatKhauRequest` (`current_password:admin`, `same`, `different`, `$stopOnFirstFailure`), `Client\DangNhapRequest`, `Client\DangKyRequest`.
 - [x] Controller: `Admin\AuthController` (đăng nhập, đổi mật khẩu, đăng xuất chỉ guard admin + `regenerateToken()`, không `invalidate()`), `Admin\DashboardController` (khung trang), `Client\AccountController` (đăng nhập email/SĐT, đăng ký, đăng xuất). Mật khẩu kiểm tra bằng `Hash::check`, tự rehash nếu cần như bản gốc.
-- **TẠM THỜI:** các trang module admin (`admin.*.index`) và trang khách (`trang-chu`, `lien-he`, `phong.index`, `dich-vu.index`, `danh-gia.index`, `tai-khoan.ho-so`, `tai-khoan.lich-su`) đang là `Route::view` trỏ tới `admin/dang-xay-dung` / `client/dang-xay-dung` để menu và kiểm tra phân quyền chạy được. Giai đoạn 4/5 thay bằng controller thật rồi xóa 2 view này.
+- **TẠM THỜI:** ~~các trang module admin (`admin.*.index`)~~ (đã thay hết ở GĐ 4A–4E) và trang khách (`trang-chu`, `lien-he`, `phong.index`, `dich-vu.index`, `danh-gia.index`, `tai-khoan.ho-so`, `tai-khoan.lich-su`) đang là `Route::view` trỏ tới `admin/dang-xay-dung` / `client/dang-xay-dung` để menu và kiểm tra phân quyền chạy được. Giai đoạn 4/5 thay bằng controller thật rồi xóa 2 view này.
 - Ghi chú: Form Request báo lỗi theo thứ tự trường; khi một form có **nhiều lỗi cùng lúc**, câu đầu tiên có thể khác bản gốc (vd. họ tên quá dài + thiếu mật khẩu). Từng lỗi riêng lẻ cho đúng câu gốc.
 - **Kiểm tra (kết quả thật, `curl` có cookie qua `http://hotel.laravel.test`): 60/60 đạt**, `storage/logs/laravel.log` không có lỗi. Sau đó chạy `migrate:fresh --seed` để trả dữ liệu mẫu.
   - Chưa đăng nhập: `/admin/phong` → 302 `/admin/dang-nhap` + "Vui lòng đăng nhập để tiếp tục."; `/tai-khoan/lich-su` → 302 `/tai-khoan/dang-nhap` + flash warning. GET `/admin/dang-xuat` → 405; POST thiếu `_token` → 419; `/admin/khong-co` → 404 (L7).
@@ -137,6 +137,17 @@
   - **Kịch bản nghiệm thu (phía admin; phần khách đặt làm ở GĐ 5):** đơn teo, phòng 104, hôm nay → +2 ngày → `CHO_ADMIN_DUYET`, `GiaPhongDat = 300000`; đặt trùng 104 → chặn (R20); trả phòng khi chưa nhận (R08), nhận khi chưa duyệt (R12) → chặn; duyệt → `DA_XAC_NHAN`, phòng "Đã đặt"; nhận phòng → `DANG_SU_DUNG`, phòng "Đang thuê"; số lượng 0 / 10.001 (R23) / dịch vụ 99 (R24) → chặn; **Ăn sáng × 2** (chi tiết đơn) + **Massage × 1** (trang thêm dịch vụ vào đơn) → tổng 1.260.000; trả phòng → hóa đơn `CHUA_THANH_TOAN` **1.260.000 đ**; thêm dịch vụ sau khi lập → hóa đơn tự tính lại (1.290.000), đặt lại số lượng ở trang Chi tiết DV → về 1.260.000; thanh toán hóa đơn mẫu #1 (đơn không đang ở) → chặn (R36); **thanh toán → hóa đơn `DA_THANH_TOAN`, đơn `DA_HOAN_THANH`, `payment_status = DA_THANH_TOAN`, phòng 104 "Trống"**; đổi giá Massage sau đó → hóa đơn/chi tiết đơn vẫn 1.260.000 (snapshot); thêm dịch vụ sau thanh toán → chặn (R21); hóa đơn thứ hai của cùng đơn → chặn (R35); đặt lại 104 cùng ngày sau khi đơn cũ hoàn tất → được.
   - Hủy đơn → `DA_HUY`, không ghi đè nhân viên; nhận phòng đơn mẫu tháng 5 → "Đơn đặt phòng đã quá ngày trả." (R13); nhận phòng trước ngày nhận (R14); xóa dịch vụ khỏi đơn (2 cách, `back=detail`); xóa chi tiết của đơn 99999 → R18; id không tồn tại → flash; 6 hóa đơn trong danh sách.
   - Phân quyền: `binh` (Lễ tân) vào đặt phòng / chi tiết DV / hóa đơn → 200; `vung` → 403, kể cả POST thanh toán.
+
+### Kết quả Giai đoạn 4E (Dashboard, Thống kê)
+- [x] `DashboardController@index`: `ThongKeService::getSummary()` (tổng doanh thu), `Phong::demTheoTrangThai()` (3 thẻ phòng), đơn `CHO_ADMIN_DUYET` qua `DatPhong::loc()` (mới nhất trước, như `DatPhongModel::getAll`). Bảng đơn chờ duyệt có nút "Chi tiết" và form POST "Duyệt" (`@csrf`).
+- [x] `ThongKeController@index`: `?year` đọc bằng `$request->integer('year', now()->year)` (giống `(int)($_GET['year'] ?? date('Y'))`), `getSummary()` + `getMonthlyRevenue($year)`; ô chọn 5 năm gần nhất tự gửi form.
+- [x] Chart.js qua CDN (`cdn.jsdelivr.net/npm/chart.js@4.4.1`, bản gốc không ghi phiên bản), đặt trong `@push('scripts')` sau Bootstrap; dữ liệu truyền bằng `@json`. Cấu hình biểu đồ giữ y nguyên.
+- [x] Route `admin.thong-ke.index` → controller thật (`quyen:THONG_KE`); đã xóa view tạm `admin/dang-xay-dung.blade.php` (không còn trang tạm phía quản trị).
+- **Kiểm tra (kết quả thật):**
+  - **So số liệu với code gốc trên cùng một DB:** chạy `ThongKeModel::getSummary()`, `getMonthlyRevenue()` (năm 2022–2027 và 0), `PhongModel::countByStatus()`, `DatPhongModel::getAll('CHO_ADMIN_DUYET')` của `hotel_php` (chỉ đọc, trỏ DB qua biến môi trường `HOTEL_DB_NAME=hotel_laravel`) và bản Laravel, so JSON → **khớp tuyệt đối** ở cả dữ liệu mẫu và dữ liệu thử.
+  - Dữ liệu thử: kịch bản nghiệm thu (hóa đơn #6 = 1.260.000, đã thanh toán hôm nay) + hóa đơn mẫu đã thanh toán rải tháng 05/2026, 10/2026, 01/2025, 12/2025 (1 hóa đơn tháng này chưa thanh toán → không tính) + 2 đơn chờ duyệt + phòng đủ trạng thái (`Đang thuê`, `Đã đặt`, `Đang sử dụng` cũ, `Bảo trì`, `NULL`). Kết quả: tổng doanh thu 5.110.000, tháng này 1.610.000, phòng trống 10 (gồm `NULL`), đang thuê/đã đặt 3 (gồm "Đang sử dụng"), bảo trì 2.
+  - **HTTP thật (`viet`): 34/34 đạt** — 4 thẻ dashboard đúng số, "Đơn đặt phòng chờ duyệt (2)" mới nhất trước, tên khách / SĐT / loại phòng / ngày đúng, nút Duyệt trên dashboard → đơn chuyển trạng thái, còn (1); thống kê năm 2026 / 2025 / 2019 đúng dữ liệu biểu đồ và bảng 12 tháng, ô năm chọn đúng, `?year=abc` → "Năm 0" như bản gốc; `vung` vào dashboard 200, thống kê 403; `binh` thống kê 403; chưa đăng nhập → 302. Log không có lỗi mới.
+  - Sau kiểm tra: `migrate:fresh --seed`, so lại với code gốc → khớp (doanh thu 0, 15 phòng trống, 0 đơn chờ duyệt).
 
 ---
 
@@ -219,8 +230,8 @@ Quy ước:
 | A65 | danh-gia / edit (GET) | GET | `/admin/danh-gia/{danh_gia}/sua` | `admin.danh-gia.edit` | `DanhGiaController@edit` | DANH_GIA | ✅ |
 | A66 | danh-gia / edit (POST) | PUT | `/admin/danh-gia/{danh_gia}` | `admin.danh-gia.update` | `DanhGiaController@update` | DANH_GIA | ✅ |
 | A67 | danh-gia / delete | DELETE | `/admin/danh-gia/{danh_gia}` | `admin.danh-gia.destroy` | `DanhGiaController@destroy` | DANH_GIA | ✅ |
-| A68 | thong-ke / index (`?year`) | GET | `/admin/thong-ke` | `admin.thong-ke.index` | `ThongKeController@index` | THONG_KE | ⬜ |
-| A69 | `c` không hợp lệ → về dashboard | — | 404 mặc định của Laravel (đã duyệt, L7) | — | — | — | ⬜ |
+| A68 | thong-ke / index (`?year`) | GET | `/admin/thong-ke` | `admin.thong-ke.index` | `ThongKeController@index` | THONG_KE | ✅ |
+| A69 | `c` không hợp lệ → về dashboard | — | 404 mặc định của Laravel (đã duyệt, L7) | — | — | — | ✅ |
 
 ### 1.2 Khách hàng (`index.php`)
 
@@ -398,7 +409,7 @@ Ghi chú route:
 | `admin/layouts/header.php` + `nav.php` + `footer.php` | `admin/layouts/app.blade.php` + `admin/layouts/nav.blade.php` (ẩn nav khi `hideNav`) | ✅ |
 | `admin/auth/login.php` | `admin/auth/login.blade.php` | ✅ |
 | `admin/auth/change-password.php` | `admin/auth/change-password.blade.php` | ✅ |
-| `admin/dashboard/index.php` | `admin/dashboard/index.blade.php` | ⬜ |
+| `admin/dashboard/index.php` | `admin/dashboard/index.blade.php` | ✅ |
 | `admin/phong/list.php` | `admin/phong/index.blade.php` | ✅ |
 | `admin/phong/form.php` | `admin/phong/form.blade.php` | ✅ |
 | `admin/loai-phong/list.php` | `admin/loai-phong/index.blade.php` | ✅ |
@@ -422,7 +433,7 @@ Ghi chú route:
 | `admin/ct-dich-vu/them-vao-don.php` | `admin/ct-dich-vu/them-vao-don.blade.php` | ✅ |
 | `admin/hoa-don/list.php` | `admin/hoa-don/index.blade.php` | ✅ |
 | `admin/hoa-don/detail.php` | `admin/hoa-don/show.blade.php` | ✅ |
-| `admin/thong-ke/index.php` | `admin/thong-ke/index.blade.php` | ⬜ |
+| `admin/thong-ke/index.php` | `admin/thong-ke/index.blade.php` | ✅ |
 | (HTML 403 trong `Auth::requirePermission`) | `errors/403.blade.php` | ✅ |
 | (thông báo CSRF trong `guard_request`) | `errors/419.blade.php` | ✅ |
 | `client/layouts/header.php` + `footer.php` | `client/layouts/app.blade.php` | ✅ |

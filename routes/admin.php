@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\LoaiPhongController;
 use App\Http\Controllers\Admin\NhanVienController;
 use App\Http\Controllers\Admin\PhanCongController;
 use App\Http\Controllers\Admin\PhongController;
+use App\Http\Controllers\Admin\ThongKeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -124,7 +125,6 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('{hoa_don}/thanh-toan', 'pay')->name('thanh-toan')->missing($khongCo);
         });
 
-    // TẠM THỜI: Thống kê làm ở Giai đoạn 4E
-    Route::view('thong-ke', 'admin.dang-xay-dung', ['tenChucNang' => 'Báo cáo thống kê'])
-        ->name('thong-ke.index')->middleware('quyen:THONG_KE');
+    Route::get('thong-ke', [ThongKeController::class, 'index'])->name('thong-ke.index')
+        ->middleware('quyen:THONG_KE');
 });
