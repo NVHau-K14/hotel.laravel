@@ -47,6 +47,16 @@ return [
             'report' => false,
         ],
 
+        // Ảnh phòng/dịch vụ tải lên: lưu thẳng vào public/uploads nên không cần storage:link
+        'uploads' => [
+            'driver' => 'local',
+            'root' => public_path('uploads'),
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/uploads',
+            'visibility' => 'public',
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

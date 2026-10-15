@@ -9,7 +9,7 @@
 | 0 | Khảo sát, lập checklist | ✅ Xong (2026-10-15) |
 | 1 | Cấu hình, Migration, Seeder, tài nguyên tĩnh | ✅ Xong (2026-10-15) |
 | 2 | Model Eloquent | ✅ Xong (2026-10-15) |
-| 3 | Auth, phân quyền, layout, helper, xử lý lỗi | ⬜ |
+| 3 | Auth, phân quyền, layout, helper, xử lý lỗi | ✅ Xong (2026-10-15) |
 | 4A | LoaiPhong, Phong, DichVu | ⬜ |
 | 4B | KhachHang, NhanVien, ChucVu | ⬜ |
 | 4C | PhanCong, DanhGia | ⬜ |
@@ -67,6 +67,31 @@
   - Đã thử chặn: R01, R02, R11, R12, R13, R16, R20, R21, R23, R26, R28, R29, R31, R36, R38, R39, R51 → đúng câu thông báo gốc.
   - Sau ROLLBACK: 5 đơn, 5 hóa đơn, 0 CTDICHVU, 5 khách, phòng 104 "Trống" → DB không đổi.
 
+### Kết quả Giai đoạn 3
+- [x] `config/auth.php`: guard `web` → provider `khach_hang` (`KhachHang`), guard `admin` → provider `nhan_vien` (`NhanVien`). Bỏ password broker. Đã xóa `app/Models/User.php`, `database/factories/UserFactory.php` (giữ thư mục `factories` bằng `.gitkeep`).
+- [x] Middleware `quyen` (`App\Http\Middleware\KiemTraQuyen`) → `abort(403, "Bạn không có quyền thực hiện chức năng này (MÃ).")`. Blade directive `@quyen('MÃ') … @endquyen` (menu admin). `NhanVien::coQuyen()`: "Quản lý" toàn quyền.
+- [x] Middleware `DangXuatKhachBiKhoa` (nhóm web, đặt **trước** `auth` trong danh sách ưu tiên): khách bị khóa → đăng xuất ở request kế tiếp, xóa `guest_booking_ids`, `guest_customer_id`.
+- [x] `bootstrap/app.php`: route admin tách ra `routes/admin.php` (tiền tố `/admin`, tên `admin.`); `redirectGuestsTo` (admin → `admin.dang-nhap` + flash danger, khách → `tai-khoan.dang-nhap` + flash warning); `redirectUsersTo` (admin → dashboard, đăng ký → trang chủ, đăng nhập khách → lịch sử); không trim các ô `matKhauCu`, `matKhauMoi`, `xacNhanMatKhau`.
+- [x] Xử lý lỗi tập trung (`withExceptions`): `DomainException` / `QueryException` 1451, 1062, 1452, 1406, 1264, 1292 → form (POST/PUT/DELETE) quay lại kèm flash danger + dữ liệu cũ (bỏ mật khẩu); xem trang (GET) → trang `errors/422`. Lỗi khác để Laravel xử lý. `DomainException` không ghi log.
+- [x] `app/helpers.php` (`format_currency`, `format_date` — nhận cả Carbon), đăng ký `autoload.files` trong `composer.json`, đã `composer dump-autoload`.
+- [x] Flash giữ cấu trúc `session('flash') = ['type' => ..., 'message' => ...]`; macro `->thongBao('success', '...')` cho `RedirectResponse` (`AppServiceProvider`). `Route::resourceVerbs(['create' => 'them', 'edit' => 'sua'])`.
+- [x] Disk `uploads` (`public_path('uploads')`) trong `config/filesystems.php`.
+- [x] Layout `admin/layouts/app.blade.php` + `nav.blade.php` (ẩn nav khi `hideNav`), `client/layouts/app.blade.php`; trang lỗi `errors/403, 404, 405, 419, 422` tiếng Việt (`errors/khung.blade.php`).
+- [x] Form Request: `Admin\DangNhapRequest`, `Admin\DoiMatKhauRequest` (`current_password:admin`, `same`, `different`, `$stopOnFirstFailure`), `Client\DangNhapRequest`, `Client\DangKyRequest`.
+- [x] Controller: `Admin\AuthController` (đăng nhập, đổi mật khẩu, đăng xuất chỉ guard admin + `regenerateToken()`, không `invalidate()`), `Admin\DashboardController` (khung trang), `Client\AccountController` (đăng nhập email/SĐT, đăng ký, đăng xuất). Mật khẩu kiểm tra bằng `Hash::check`, tự rehash nếu cần như bản gốc.
+- **TẠM THỜI:** các trang module admin (`admin.*.index`) và trang khách (`trang-chu`, `lien-he`, `phong.index`, `dich-vu.index`, `danh-gia.index`, `tai-khoan.ho-so`, `tai-khoan.lich-su`) đang là `Route::view` trỏ tới `admin/dang-xay-dung` / `client/dang-xay-dung` để menu và kiểm tra phân quyền chạy được. Giai đoạn 4/5 thay bằng controller thật rồi xóa 2 view này.
+- Ghi chú: Form Request báo lỗi theo thứ tự trường; khi một form có **nhiều lỗi cùng lúc**, câu đầu tiên có thể khác bản gốc (vd. họ tên quá dài + thiếu mật khẩu). Từng lỗi riêng lẻ cho đúng câu gốc.
+- **Kiểm tra (kết quả thật, `curl` có cookie qua `http://hotel.laravel.test`): 60/60 đạt**, `storage/logs/laravel.log` không có lỗi. Sau đó chạy `migrate:fresh --seed` để trả dữ liệu mẫu.
+  - Chưa đăng nhập: `/admin/phong` → 302 `/admin/dang-nhap` + "Vui lòng đăng nhập để tiếp tục."; `/tai-khoan/lich-su` → 302 `/tai-khoan/dang-nhap` + flash warning. GET `/admin/dang-xuat` → 405; POST thiếu `_token` → 419; `/admin/khong-co` → 404 (L7).
+  - `viet`/`1`: vào `/admin`, flash thành công, hiện "Nguyễn Quốc Việt / Quản lý", menu 13 mục, `/admin/phong` 200. Bỏ trống / sai mật khẩu → đúng câu gốc, giữ username.
+  - `vung`/`1`: menu **chỉ có Dashboard**; `/admin/phong` → **403** "Bạn không có quyền thực hiện chức năng này (PHONG)." + "Quay lại bảng điều khiển".
+  - Đổi mật khẩu `binh`: 4 lỗi đúng câu gốc; đổi thành công → flash, mật khẩu cũ hết dùng được; mật khẩu có khoảng trắng không bị cắt.
+  - Khách `teo@gmail.com`/`1` và `0912345678`/`1` đăng nhập được, header "Xin chào, Lê Văn Tèo".
+  - Khóa `teo` trong DB: đang đăng nhập → request kế tiếp bị đăng xuất; đăng nhập lại → flash "Tài khoản của bạn đã bị khóa…" kèm lỗi chung (như bản gốc).
+  - Đăng nhập admin + khách cùng trình duyệt: **admin đăng xuất → khách vẫn đăng nhập**; khách đăng xuất → admin vẫn đăng nhập.
+  - Đăng ký: thiếu trường / SĐT trùng / SĐT sai / email sai / email trùng → đúng câu gốc, giữ dữ liệu đã nhập; đăng ký hợp lệ → tự đăng nhập, `Email = ''`, `EmailConnexion = NULL`, mật khẩu bcrypt, họ tên tiếng Việt lưu đúng UTF-8.
+  - Bộ xử lý lỗi: `DomainException` POST → 302 + flash + dữ liệu cũ (không có mật khẩu), GET → 422; `QueryException` 1451/1062/1452 → đúng câu tiếng Việt; 1366 → 500 mặc định.
+
 ---
 
 ## 1. Bảng ánh xạ route
@@ -81,12 +106,12 @@ Quy ước:
 
 | # | Gốc (c / a) | Method | URL Laravel | Tên route | Controller@method | Middleware / Quyền | Xong |
 |---|---|---|---|---|---|---|---|
-| A01 | auth / login (GET) | GET | `/admin/dang-nhap` | `admin.dang-nhap` | `AuthController@showLogin` | `guest:admin` | ⬜ |
-| A02 | auth / login (POST) | POST | `/admin/dang-nhap` | `admin.dang-nhap.store` | `AuthController@login` | `guest:admin` | ⬜ |
-| A03 | auth / changePassword (GET) | GET | `/admin/doi-mat-khau` | `admin.doi-mat-khau` | `AuthController@showChangePassword` | `auth:admin` | ⬜ |
-| A04 | auth / changePassword (POST) | PUT | `/admin/doi-mat-khau` | `admin.doi-mat-khau.update` | `AuthController@changePassword` | `auth:admin` | ⬜ |
-| A05 | auth / logout | POST | `/admin/dang-xuat` | `admin.dang-xuat` | `AuthController@logout` | `auth:admin` | ⬜ |
-| A06 | dashboard / index (và `admin/` không có `c`) | GET | `/admin` | `admin.dashboard` | `DashboardController@index` | DASHBOARD | ⬜ |
+| A01 | auth / login (GET) | GET | `/admin/dang-nhap` | `admin.dang-nhap` | `AuthController@showLogin` | `guest:admin` | ✅ |
+| A02 | auth / login (POST) | POST | `/admin/dang-nhap` | `admin.dang-nhap.store` | `AuthController@login` | `guest:admin` | ✅ |
+| A03 | auth / changePassword (GET) | GET | `/admin/doi-mat-khau` | `admin.doi-mat-khau` | `AuthController@showChangePassword` | `auth:admin` | ✅ |
+| A04 | auth / changePassword (POST) | PUT | `/admin/doi-mat-khau` | `admin.doi-mat-khau.update` | `AuthController@changePassword` | `auth:admin` | ✅ |
+| A05 | auth / logout | POST | `/admin/dang-xuat` | `admin.dang-xuat` | `AuthController@logout` | `auth:admin` | ✅ |
+| A06 | dashboard / index (và `admin/` không có `c`) | GET | `/admin` | `admin.dashboard` | `DashboardController@index` | DASHBOARD | ✅ |
 | A07 | phong / list | GET | `/admin/phong` | `admin.phong.index` | `PhongController@index` | PHONG | ⬜ |
 | A08 | phong / add (GET) | GET | `/admin/phong/them` | `admin.phong.create` | `PhongController@create` | PHONG | ⬜ |
 | A09 | phong / add (POST) | POST | `/admin/phong` | `admin.phong.store` | `PhongController@store` | PHONG | ⬜ |
@@ -165,14 +190,14 @@ Quy ước:
 | K08 | service / list | GET | `/dich-vu` | `dich-vu.index` | `ServiceController@index` | — | ⬜ |
 | K09 | review, reviews / list | GET | `/danh-gia` | `danh-gia.index` | `ReviewController@index` | — | ⬜ |
 | K10 | review / submit | POST | `/danh-gia` | `danh-gia.store` | `ReviewController@store` | `auth:web` | ⬜ |
-| K11 | account / login (GET; mặc định của `account`) | GET | `/tai-khoan/dang-nhap` | `tai-khoan.dang-nhap` | `AccountController@showLogin` | đã đăng nhập → lịch sử | ⬜ |
-| K12 | account / login (POST) | POST | `/tai-khoan/dang-nhap` | `tai-khoan.dang-nhap.store` | `AccountController@login` | — | ⬜ |
-| K13 | account / register (GET) | GET | `/tai-khoan/dang-ky` | `tai-khoan.dang-ky` | `AccountController@showRegister` | đã đăng nhập → trang chủ | ⬜ |
-| K14 | account / register (POST) | POST | `/tai-khoan/dang-ky` | `tai-khoan.dang-ky.store` | `AccountController@register` | — | ⬜ |
+| K11 | account / login (GET; mặc định của `account`) | GET | `/tai-khoan/dang-nhap` | `tai-khoan.dang-nhap` | `AccountController@showLogin` | đã đăng nhập → lịch sử | ✅ |
+| K12 | account / login (POST) | POST | `/tai-khoan/dang-nhap` | `tai-khoan.dang-nhap.store` | `AccountController@login` | — | ✅ |
+| K13 | account / register (GET) | GET | `/tai-khoan/dang-ky` | `tai-khoan.dang-ky` | `AccountController@showRegister` | đã đăng nhập → trang chủ | ✅ |
+| K14 | account / register (POST) | POST | `/tai-khoan/dang-ky` | `tai-khoan.dang-ky.store` | `AccountController@register` | — | ✅ |
 | K15 | account / profile | GET | `/tai-khoan` | `tai-khoan.ho-so` | `AccountController@profile` | `auth:web` | ⬜ |
 | K16 | account / history | GET | `/tai-khoan/lich-su` | `tai-khoan.lich-su` | `AccountController@history` | `auth:web` | ⬜ |
 | K17 | account / detail (`id`, chỉ đơn của mình) | GET | `/tai-khoan/don/{datPhong}` | `tai-khoan.chi-tiet` | `AccountController@detail` | `auth:web` | ⬜ |
-| K18 | account / logout | POST | `/tai-khoan/dang-xuat` | `tai-khoan.dang-xuat` | `AccountController@logout` | `auth:web` | ⬜ |
+| K18 | account / logout | POST | `/tai-khoan/dang-xuat` | `tai-khoan.dang-xuat` | `AccountController@logout` | `auth:web` | ✅ |
 
 Ghi chú route:
 - Bản gốc chặn GET cho các action đổi dữ liệu (`guard_request`: delete, toggle, approve, checkin, checkout, cancel, pay, removeService, logout, addService, saveToBooking, updatePermissions, submit) → Laravel tự chặn vì route chỉ khai báo POST/PUT/DELETE.
@@ -191,8 +216,8 @@ Ghi chú route:
 |---|---|---|---|---|---|
 | R01 | 68 | `validate_stay`: ngày sai định dạng hoặc ngày trả ≤ ngày nhận (dùng ở đặt phòng, chuyển trạng thái, tính hóa đơn, lọc phòng) | Ngày nhận/trả không hợp lệ. Ngày trả phải sau ngày nhận. | Form Request (`date`, `after:ngayNhan`) + `DatPhongService` | `DatPhongService::validateStay` ✅ (Form Request: chờ GĐ 4D/5) |
 | R02 | 71 | `validate_stay`: ngày nhận < hôm nay (trừ khi `allowPast`) | Ngày nhận phòng không được nằm trong quá khứ. | Form Request (`after_or_equal:today`) + `DatPhongService::createBooking` | `DatPhongService::validateStay` ✅ (Form Request: chờ GĐ 4D/5) |
-| R03 | 77 | `validate_customer`: họ tên rỗng/>255 hoặc SĐT không khớp `/^[+0-9][0-9 .()-]{7,19}$/` | Vui lòng nhập họ tên và số điện thoại hợp lệ. | Form Request đặt phòng/đăng ký (`regex`, `max`) | |
-| R04 | 80 | `validate_customer`: email sai/ >254, địa chỉ >255, CMND >20 | Email, địa chỉ hoặc số giấy tờ không hợp lệ hoặc quá dài. | Form Request đặt phòng/đăng ký | |
+| R03 | 77 | `validate_customer`: họ tên rỗng/>255 hoặc SĐT không khớp `/^[+0-9][0-9 .()-]{7,19}$/` | Vui lòng nhập họ tên và số điện thoại hợp lệ. | Form Request đặt phòng/đăng ký (`regex`, `max`) | `Client\DangKyRequest` ✅ (đặt phòng: GĐ 5) |
+| R04 | 80 | `validate_customer`: email sai/ >254, địa chỉ >255, CMND >20 | Email, địa chỉ hoặc số giấy tờ không hợp lệ hoặc quá dài. | Form Request đặt phòng/đăng ký | `Client\DangKyRequest` ✅ (đặt phòng: GĐ 5) |
 | R05 | 93 | `upload_image`: lỗi upload hoặc > 5 MB | Không tải được ảnh. Vui lòng chọn ảnh tối đa 5 MB. | Form Request Phong/DichVu (`max:5120`) | |
 | R06 | 98 | `upload_image`: không phải JPG/PNG/WebP/GIF hợp lệ | Chỉ chấp nhận ảnh JPG, PNG, WebP hoặc GIF hợp lệ. | Form Request (`image`, `mimes:jpg,jpeg,png,webp,gif`) | |
 
@@ -324,9 +349,9 @@ Ghi chú route:
 
 | View gốc (`hotel_php/views/...`) | Blade mới (`resources/views/...`) | Xong |
 |---|---|---|
-| `admin/layouts/header.php` + `nav.php` + `footer.php` | `admin/layouts/app.blade.php` + `admin/layouts/nav.blade.php` (ẩn nav khi `hideNav`) | ⬜ |
-| `admin/auth/login.php` | `admin/auth/login.blade.php` | ⬜ |
-| `admin/auth/change-password.php` | `admin/auth/change-password.blade.php` | ⬜ |
+| `admin/layouts/header.php` + `nav.php` + `footer.php` | `admin/layouts/app.blade.php` + `admin/layouts/nav.blade.php` (ẩn nav khi `hideNav`) | ✅ |
+| `admin/auth/login.php` | `admin/auth/login.blade.php` | ✅ |
+| `admin/auth/change-password.php` | `admin/auth/change-password.blade.php` | ✅ |
 | `admin/dashboard/index.php` | `admin/dashboard/index.blade.php` | ⬜ |
 | `admin/phong/list.php` | `admin/phong/index.blade.php` | ⬜ |
 | `admin/phong/form.php` | `admin/phong/form.blade.php` | ⬜ |
@@ -352,9 +377,9 @@ Ghi chú route:
 | `admin/hoa-don/list.php` | `admin/hoa-don/index.blade.php` | ⬜ |
 | `admin/hoa-don/detail.php` | `admin/hoa-don/show.blade.php` | ⬜ |
 | `admin/thong-ke/index.php` | `admin/thong-ke/index.blade.php` | ⬜ |
-| (HTML 403 trong `Auth::requirePermission`) | `errors/403.blade.php` | ⬜ |
-| (thông báo CSRF trong `guard_request`) | `errors/419.blade.php` (đề xuất) | ⬜ |
-| `client/layouts/header.php` + `footer.php` | `client/layouts/app.blade.php` | ⬜ |
+| (HTML 403 trong `Auth::requirePermission`) | `errors/403.blade.php` | ✅ |
+| (thông báo CSRF trong `guard_request`) | `errors/419.blade.php` | ✅ |
+| `client/layouts/header.php` + `footer.php` | `client/layouts/app.blade.php` | ✅ |
 | `client/home.php` | `client/home.blade.php` | ⬜ |
 | `client/contact.php` | `client/contact.blade.php` | ⬜ |
 | `client/rooms.php` | `client/rooms.blade.php` | ⬜ |
@@ -363,8 +388,8 @@ Ghi chú route:
 | `client/reviews.php` | `client/reviews.blade.php` | ⬜ |
 | `client/booking.php` | `client/booking.blade.php` | ⬜ |
 | `client/booking-success.php` | `client/booking-success.blade.php` | ⬜ |
-| `client/account/login.php` | `client/account/login.blade.php` | ⬜ |
-| `client/account/register.php` | `client/account/register.blade.php` | ⬜ |
+| `client/account/login.php` | `client/account/login.blade.php` | ✅ |
+| `client/account/register.php` | `client/account/register.blade.php` | ✅ |
 | `client/account/profile.php` | `client/account/profile.blade.php` | ⬜ |
 | `client/account/history.php` | `client/account/history.blade.php` | ⬜ |
 | `client/account/booking-detail.php` | `client/account/booking-detail.blade.php` | ⬜ |

@@ -18,6 +18,9 @@ class KhachHang extends Authenticatable
 
     public const KHOA = 'KHOA';
 
+    /** Số điện thoại hợp lệ (validate_customer của bản gốc) */
+    public const REGEX_DIEN_THOAI = '/^[+0-9][0-9 .()-]{7,19}$/D';
+
     protected $table = 'KHACHHANG';
 
     protected $primaryKey = 'MaKhachHang';
