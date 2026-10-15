@@ -12,7 +12,7 @@
 | 3 | Auth, phân quyền, layout, helper, xử lý lỗi | ✅ Xong (2026-10-15) |
 | 4A | LoaiPhong, Phong, DichVu | ✅ Xong (2026-10-15) |
 | 4B | KhachHang, NhanVien, ChucVu | ✅ Xong (2026-10-15) |
-| 4C | PhanCong, DanhGia | ⬜ |
+| 4C | PhanCong, DanhGia | ✅ Xong (2026-10-15) |
 | 4D | DatPhong, CtDichVu, HoaDon | ⬜ |
 | 4E | Dashboard, ThongKe | ⬜ |
 | 5 | Phía khách hàng | ⬜ |
@@ -116,6 +116,13 @@
   - Chức vụ: 4 thẻ, 22 ô được tick (khớp CHUCVU_QUYEN); lưu DASHBOARD + PHONG cho Bảo vệ → `vung` vào được `/admin/phong`, menu 2 mục; mã quyền lạ → "Danh sách quyền không hợp lệ." (R07), DB không đổi; bỏ tick hết → Tạp vụ mất hết quyền, `van` vào `/admin` → 403 (L6); trả quyền về 22 dòng.
   - Phân quyền: `binh` → khách hàng 200; nhân viên 403; tự cấp quyền (PUT chức vụ) 403.
 
+### Kết quả Giai đoạn 4C (Phân công, Đánh giá)
+- [x] Phân công: `GET /admin/phan-cong/hom-nay` + `Route::resource('phan-cong')`; `PhanCongRequest` (chặn ngày quá khứ **chỉ khi thêm**, như bản gốc); không chọn nhân viên → NULL; trang "Hôm nay" dùng chung view danh sách.
+- [x] Đánh giá: `Route::resource('danh-gia')->parameters(['danh-gia' => 'danh_gia'])` (Laravel tự đổi "gia" sang số ít thành `{danh_gium}` nên phải đặt tên tham số); `DanhGiaRequest`; thêm qua `DanhGia::taoDanhGia()` (ép sao 1–5, ngày trống → hôm nay), sửa qua `DanhGia::capNhat()` (R31).
+- **Kiểm tra (HTTP thật, `viet`): 43/43 đạt**, log không có lỗi.
+  - Phân công: thiếu nội dung / ngày quá khứ khi thêm / > 50 ký tự (R47) / ngày 30/02 → đúng câu gốc; thêm cho Vấn → hiện "(@van)", "Tạp vụ"; không chọn nhân viên → NULL, "Chưa chỉ định"; sắp ngày giảm dần; "Hôm nay" chỉ lấy phân công hôm nay, ô ngày điền sẵn; tìm từ khóa "Trực"; lọc ngày; sửa sang ngày quá khứ vẫn được; xóa; id 999 → flash; `van` (có PHAN_CONG) 200, `binh` 403.
+  - Đánh giá: 2 đánh giá mẫu (tên + email khách), sắp ngày giảm dần; thiếu nội dung / > 255 ký tự (R27) → đúng câu gốc; admin thêm với 9 sao, ngày trống → 5 sao, hôm nay, "Khách vãng lai"; đổi phòng của đánh giá gắn đơn → chặn (R31); 0 sao → 1; đánh giá không gắn đơn đổi phòng được; xóa; id 999 → flash; `binh` 403.
+
 ---
 
 ## 1. Bảng ánh xạ route
@@ -184,19 +191,19 @@ Quy ước:
 | A52 | ct-dich-vu / addToBooking | GET | `/admin/ct-dich-vu/don/{dat_phong}` | `admin.ct-dich-vu.them-vao-don` | `CtDichVuController@addToBooking` | CT_DICH_VU | ⬜ |
 | A53 | ct-dich-vu / saveToBooking | POST | `/admin/ct-dich-vu/don/{dat_phong}` | `admin.ct-dich-vu.luu-vao-don` | `CtDichVuController@saveToBooking` | CT_DICH_VU | ⬜ |
 | A54 | ct-dich-vu / delete (khóa ghép; input `back=detail` để quay về chi tiết đơn) | DELETE | `/admin/ct-dich-vu/{dat_phong}/{dich_vu}` | `admin.ct-dich-vu.destroy` | `CtDichVuController@destroy` | CT_DICH_VU | ⬜ |
-| A55 | phan-cong / list (`?keyword`, `?ngay`) | GET | `/admin/phan-cong` | `admin.phan-cong.index` | `PhanCongController@index` | PHAN_CONG | ⬜ |
-| A56 | phan-cong / homNay | GET | `/admin/phan-cong/hom-nay` | `admin.phan-cong.hom-nay` | `PhanCongController@homNay` | PHAN_CONG | ⬜ |
-| A57 | phan-cong / add (GET) | GET | `/admin/phan-cong/them` | `admin.phan-cong.create` | `PhanCongController@create` | PHAN_CONG | ⬜ |
-| A58 | phan-cong / add (POST) | POST | `/admin/phan-cong` | `admin.phan-cong.store` | `PhanCongController@store` | PHAN_CONG | ⬜ |
-| A59 | phan-cong / edit (GET) | GET | `/admin/phan-cong/{phan_cong}/sua` | `admin.phan-cong.edit` | `PhanCongController@edit` | PHAN_CONG | ⬜ |
-| A60 | phan-cong / edit (POST) | PUT | `/admin/phan-cong/{phan_cong}` | `admin.phan-cong.update` | `PhanCongController@update` | PHAN_CONG | ⬜ |
-| A61 | phan-cong / delete | DELETE | `/admin/phan-cong/{phan_cong}` | `admin.phan-cong.destroy` | `PhanCongController@destroy` | PHAN_CONG | ⬜ |
-| A62 | danh-gia / list | GET | `/admin/danh-gia` | `admin.danh-gia.index` | `DanhGiaController@index` | DANH_GIA | ⬜ |
-| A63 | danh-gia / add (GET) | GET | `/admin/danh-gia/them` | `admin.danh-gia.create` | `DanhGiaController@create` | DANH_GIA | ⬜ |
-| A64 | danh-gia / add (POST) | POST | `/admin/danh-gia` | `admin.danh-gia.store` | `DanhGiaController@store` | DANH_GIA | ⬜ |
-| A65 | danh-gia / edit (GET) | GET | `/admin/danh-gia/{danh_gia}/sua` | `admin.danh-gia.edit` | `DanhGiaController@edit` | DANH_GIA | ⬜ |
-| A66 | danh-gia / edit (POST) | PUT | `/admin/danh-gia/{danh_gia}` | `admin.danh-gia.update` | `DanhGiaController@update` | DANH_GIA | ⬜ |
-| A67 | danh-gia / delete | DELETE | `/admin/danh-gia/{danh_gia}` | `admin.danh-gia.destroy` | `DanhGiaController@destroy` | DANH_GIA | ⬜ |
+| A55 | phan-cong / list (`?keyword`, `?ngay`) | GET | `/admin/phan-cong` | `admin.phan-cong.index` | `PhanCongController@index` | PHAN_CONG | ✅ |
+| A56 | phan-cong / homNay | GET | `/admin/phan-cong/hom-nay` | `admin.phan-cong.hom-nay` | `PhanCongController@homNay` | PHAN_CONG | ✅ |
+| A57 | phan-cong / add (GET) | GET | `/admin/phan-cong/them` | `admin.phan-cong.create` | `PhanCongController@create` | PHAN_CONG | ✅ |
+| A58 | phan-cong / add (POST) | POST | `/admin/phan-cong` | `admin.phan-cong.store` | `PhanCongController@store` | PHAN_CONG | ✅ |
+| A59 | phan-cong / edit (GET) | GET | `/admin/phan-cong/{phan_cong}/sua` | `admin.phan-cong.edit` | `PhanCongController@edit` | PHAN_CONG | ✅ |
+| A60 | phan-cong / edit (POST) | PUT | `/admin/phan-cong/{phan_cong}` | `admin.phan-cong.update` | `PhanCongController@update` | PHAN_CONG | ✅ |
+| A61 | phan-cong / delete | DELETE | `/admin/phan-cong/{phan_cong}` | `admin.phan-cong.destroy` | `PhanCongController@destroy` | PHAN_CONG | ✅ |
+| A62 | danh-gia / list | GET | `/admin/danh-gia` | `admin.danh-gia.index` | `DanhGiaController@index` | DANH_GIA | ✅ |
+| A63 | danh-gia / add (GET) | GET | `/admin/danh-gia/them` | `admin.danh-gia.create` | `DanhGiaController@create` | DANH_GIA | ✅ |
+| A64 | danh-gia / add (POST) | POST | `/admin/danh-gia` | `admin.danh-gia.store` | `DanhGiaController@store` | DANH_GIA | ✅ |
+| A65 | danh-gia / edit (GET) | GET | `/admin/danh-gia/{danh_gia}/sua` | `admin.danh-gia.edit` | `DanhGiaController@edit` | DANH_GIA | ✅ |
+| A66 | danh-gia / edit (POST) | PUT | `/admin/danh-gia/{danh_gia}` | `admin.danh-gia.update` | `DanhGiaController@update` | DANH_GIA | ✅ |
+| A67 | danh-gia / delete | DELETE | `/admin/danh-gia/{danh_gia}` | `admin.danh-gia.destroy` | `DanhGiaController@destroy` | DANH_GIA | ✅ |
 | A68 | thong-ke / index (`?year`) | GET | `/admin/thong-ke` | `admin.thong-ke.index` | `ThongKeController@index` | THONG_KE | ⬜ |
 | A69 | `c` không hợp lệ → về dashboard | — | 404 mặc định của Laravel (đã duyệt, L7) | — | — | — | ⬜ |
 
@@ -284,10 +291,10 @@ Ghi chú route:
 ### `models/DanhGiaModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R27 | 48 | create: nội dung rỗng/>255 hoặc ngày sai | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` / `ReviewRequest` | |
+| R27 | 48 | create: nội dung rỗng/>255 hoặc ngày sai | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` / `ReviewRequest` | `Admin\DanhGiaRequest` ✅ (gửi đánh giá phía khách: GĐ 5) |
 | R28 | 51 | Đánh giá gắn đơn: đơn phải `DA_HOAN_THANH`, đúng khách, đúng phòng | Chỉ đánh giá lần lưu trú đã hoàn tất của chính bạn. | Model `DanhGia` / `ReviewController@store` (trong transaction, khóa đơn) | `DanhGia::taoDanhGia` ✅ |
 | R29 | 54 | Đơn đã có đánh giá | Bạn đã đánh giá lần lưu trú này. | như R28 | `DanhGia::taoDanhGia` ✅ |
-| R30 | 80 | update: như R27 | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` | |
+| R30 | 80 | update: như R27 | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` | `Admin\DanhGiaRequest` ✅ |
 | R31 | 82 | update: đánh giá gắn đơn không được đổi phòng | Không thể chuyển đánh giá của khách sang phòng khác. | `DanhGiaController@update` / model | `DanhGia::capNhat` ✅ |
 
 ### `models/HoaDonModel.php`
@@ -324,8 +331,8 @@ Ghi chú route:
 ### `models/PhanCongModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R47 | 67 | Thêm: ngày sai, nội dung rỗng/>50 | Ngày hoặc nội dung phân công không hợp lệ (tối đa 50 ký tự). | `StorePhanCongRequest` | |
-| R48 | 85 | Sửa: như R47 | Ngày hoặc nội dung phân công không hợp lệ (tối đa 50 ký tự). | `UpdatePhanCongRequest` | |
+| R47 | 67 | Thêm: ngày sai, nội dung rỗng/>50 | Ngày hoặc nội dung phân công không hợp lệ (tối đa 50 ký tự). | `StorePhanCongRequest` | `Admin\PhanCongRequest` (POST) ✅ |
+| R48 | 85 | Sửa: như R47 | Ngày hoặc nội dung phân công không hợp lệ (tối đa 50 ký tự). | `UpdatePhanCongRequest` | `Admin\PhanCongRequest` (PUT) ✅ |
 
 ### `models/LoaiPhongModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
@@ -388,10 +395,10 @@ Ghi chú route:
 | `admin/nhan-vien/list.php` | `admin/nhan-vien/index.blade.php` | ✅ |
 | `admin/nhan-vien/form.php` | `admin/nhan-vien/form.blade.php` | ✅ |
 | `admin/chuc-vu/list.php` | `admin/chuc-vu/index.blade.php` | ✅ |
-| `admin/phan-cong/list.php` (dùng cho cả `list` và `homNay`) | `admin/phan-cong/index.blade.php` | ⬜ |
-| `admin/phan-cong/form.php` | `admin/phan-cong/form.blade.php` | ⬜ |
-| `admin/danh-gia/list.php` | `admin/danh-gia/index.blade.php` | ⬜ |
-| `admin/danh-gia/form.php` | `admin/danh-gia/form.blade.php` | ⬜ |
+| `admin/phan-cong/list.php` (dùng cho cả `list` và `homNay`) | `admin/phan-cong/index.blade.php` | ✅ |
+| `admin/phan-cong/form.php` | `admin/phan-cong/form.blade.php` | ✅ |
+| `admin/danh-gia/list.php` | `admin/danh-gia/index.blade.php` | ✅ |
+| `admin/danh-gia/form.php` | `admin/danh-gia/form.blade.php` | ✅ |
 | `admin/dat-phong/list.php` | `admin/dat-phong/index.blade.php` | ⬜ |
 | `admin/dat-phong/form.php` | `admin/dat-phong/create.blade.php` | ⬜ |
 | `admin/dat-phong/detail.php` | `admin/dat-phong/show.blade.php` | ⬜ |

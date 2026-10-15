@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\ChucVuController;
+use App\Http\Controllers\Admin\DanhGiaController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DichVuController;
 use App\Http\Controllers\Admin\KhachHangController;
 use App\Http\Controllers\Admin\LoaiPhongController;
 use App\Http\Controllers\Admin\NhanVienController;
+use App\Http\Controllers\Admin\PhanCongController;
 use App\Http\Controllers\Admin\PhongController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,13 +68,22 @@ Route::middleware('auth:admin')->group(function () {
                 ->missing(fn () => redirect()->route('admin.chuc-vu.index'));
         });
 
+    Route::get('phan-cong/hom-nay', [PhanCongController::class, 'homNay'])->name('phan-cong.hom-nay')
+        ->middleware('quyen:PHAN_CONG');
+    Route::resource('phan-cong', PhanCongController::class)->except('show')
+        ->middleware('quyen:PHAN_CONG')
+        ->missing(fn () => redirect()->route('admin.phan-cong.index')->thongBao('danger', 'Không tìm thấy phân công.'));
+
+    Route::resource('danh-gia', DanhGiaController::class)->except('show')
+        ->parameters(['danh-gia' => 'danh_gia']) // tránh Laravel đổi số ít thành {danh_gium}
+        ->middleware('quyen:DANH_GIA')
+        ->missing(fn () => redirect()->route('admin.danh-gia.index')->thongBao('danger', 'Không tìm thấy đánh giá.'));
+
     // TẠM THỜI (Giai đoạn 3): trang chờ cho các module, Giai đoạn 4 thay bằng controller thật
     $moduleChuaLam = [
         'dat-phong' => ['DAT_PHONG', 'Quản lý đặt phòng'],
         'ct-dich-vu' => ['CT_DICH_VU', 'Chi tiết sử dụng dịch vụ'],
         'hoa-don' => ['HOA_DON', 'Quản lý hóa đơn'],
-        'phan-cong' => ['PHAN_CONG', 'Quản lý phân công công việc'],
-        'danh-gia' => ['DANH_GIA', 'Quản lý đánh giá khách hàng'],
         'thong-ke' => ['THONG_KE', 'Báo cáo thống kê'],
     ];
     Route::view('dat-phong/{dat_phong}', 'admin.dang-xay-dung', ['tenChucNang' => 'Chi tiết đơn đặt phòng'])
