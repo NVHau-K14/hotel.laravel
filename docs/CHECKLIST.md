@@ -16,7 +16,7 @@
 | 4D | DatPhong, CtDichVu, HoaDon | ✅ Xong (2026-10-15) |
 | 4E | Dashboard, ThongKe | ✅ Xong (2026-10-15) |
 | 5 | Phía khách hàng | ✅ Xong (2026-10-15) |
-| 6 | Kiểm tra toàn bộ + Feature test | ⬜ |
+| 6 | Kiểm tra toàn bộ + Feature test | ✅ Xong (2026-10-15) |
 | 7 | Dọn dẹp, README | ⬜ |
 
 ### Ghi chú khảo sát (Giai đoạn 0)
@@ -168,6 +168,19 @@
   - Đánh giá: đơn hoàn tất nhưng chưa qua ngày trả → chưa có form, gửi thẳng → chặn; qua ngày trả → form chỉ có phòng 104; chưa chọn phòng / mã không phải số / nội dung trống / > 255 (R27) / phòng 101 → đúng câu gốc, không lưu; gửi hợp lệ với 9 sao → lưu 5 sao, gắn khách + đơn #6, ngày hôm nay, flash cảm ơn, hiện đầu danh sách; gửi lần hai → chặn; chưa đăng nhập POST → trang đăng nhập.
   - Route gọi sai method → 405. `hotel_php` không có file nào bị thay đổi. Log Laravel không có lỗi từ các lượt kiểm tra (2 lỗi 1366 lúc 17:14 là do script kiểm tra gửi chữ có dấu qua dòng lệnh Windows bị sai mã hóa; đã sửa script và chạy lại).
   - Sau kiểm tra: `migrate:fresh --seed` (5 đơn, 5 khách, 2 đánh giá).
+
+### Kết quả Giai đoạn 6 (Kiểm tra toàn bộ + Feature test)
+- [x] **Route:** `php artisan route:list --json` đối chiếu tự động với bảng mục 1: **86/86 route có tên khớp** method, URL, controller@method; không có route nào nằm ngoài bảng. A69 (`c` không hợp lệ) dùng 404 mặc định (L7).
+- [x] **Mọi trang GET** (thay tham số bằng mã có thật, thêm các URL có bộ lọc): 65 lượt truy cập với phiên `viet` (trang quản trị), `teo` (trang tài khoản + trang công khai) và khách lạ (trang công khai) → **không trang nào lỗi 500 hay 404**, log không có dòng mới. Các 302 đều đúng ý: vào trang đăng nhập admin khi đã đăng nhập → dashboard; `phan-cong/1` không có trong dữ liệu mẫu → về danh sách kèm flash; khách lạ xem trang đặt thành công của người khác → trang chủ.
+- [x] **Kịch bản nghiệm thu qua HTTP thật** (sau `migrate:fresh --seed`): **12/12 đạt** — `teo` đặt phòng 104 trên website (hôm nay → +2 ngày) → `CHO_ADMIN_DUYET`, `GiaPhongDat = 300000`; đặt trùng ngày → bị chặn; `viet` duyệt → `DA_XAC_NHAN` (phòng "Đã đặt") → nhận phòng → `DANG_SU_DUNG` (phòng "Đang thuê") → Ăn sáng × 2 (60.000) + Massage × 1 (600.000) → trả phòng → hóa đơn `CHUA_THANH_TOAN` **1.260.000 đ** → thanh toán → hóa đơn `DA_THANH_TOAN`, đơn `DA_HOAN_THANH`, `payment_status = DA_THANH_TOAN`, phòng "Trống"; khách thấy "Hoàn tất", 1.260.000 đ; trang thống kê: doanh thu tháng này 1.260.000 đ.
+- [x] **Feature test (PHPUnit) trên MySQL `hotel_laravel_test`** (utf8mb4_unicode_ci; `phpunit.xml`: `DB_CONNECTION=mysql`, `DB_DATABASE=hotel_laravel_test`). `tests/TestCase.php` dùng `RefreshDatabase` + `$seed = true` (dựng DB + dữ liệu mẫu một lần, mỗi test chạy trong transaction rồi hoàn tác) và **chặn chạy nhầm vào DB khác** (`beforeRefreshingDatabase` ném lỗi nếu tên DB không phải `hotel_laravel_test` — đã thử với `DB_DATABASE=hotel_laravel`: dừng trước khi migrate, DB thật không đổi). Đã xóa 2 file `ExampleTest` mặc định.
+  - `Feature\KichBanNghiemThuTest` (3 test): toàn bộ kịch bản nghiệm thu qua route thật (khách đặt → trùng ngày bị chặn, cả khi khách đang ở → duyệt → nhận phòng → 2 dịch vụ bằng 2 trang khác nhau → trả phòng 1.260.000 → thanh toán → bản chụp không đổi khi đổi giá dịch vụ → khách xem đơn); khách vãng lai đặt chồng ngày bị chặn, ngày trả = ngày nhận của đơn sau thì không trùng; đơn đã hoàn tất không còn giữ phòng (như bản gốc).
+  - `Feature\PhanQuyenTest` (7 test): `vung` đăng nhập qua form → `/admin/phong` **403** "Bạn không có quyền thực hiện chức năng này (PHONG)."; menu của `vung` chỉ có Dashboard; `vung` gửi DELETE/POST phòng → 403, dữ liệu không đổi; `binh` (Lễ tân) vào được 5 module được cấp, 403 ở 4 module khác; `viet` vào được 14 trang danh sách; chưa đăng nhập → đúng trang đăng nhập từng phía + flash; sai mật khẩu.
+  - `Feature\DatPhongKhachTest` (11 test): 6 trường hợp dữ liệu sai (thiếu họ tên, R01, R02, R03, R04, R38) → đúng câu gốc hiện trong form, không tạo đơn; phòng bảo trì (R19); phòng không tồn tại; khách vãng lai đặt tiếp dùng lại khách cũ; quyền xem trang đặt thành công; không xem được đơn của người khác.
+  - `Unit\HelperTest` (3 test): `format_currency`, `format_date`, `DatPhongService::ngayHopLe`.
+  - **`php artisan test`: 24 test, 151 assertion, tất cả xanh** (~6 giây).
+- [x] **53 quy tắc nghiệp vụ:** cả 53 dòng R01–R53 đã có ✅ ở cột "Đã chuyển sang"; dò tự động từng câu thông báo trong `app/` → **53/53 câu có mặt nguyên văn** (35 chỗ vẫn là `DomainException`, phần còn lại nằm trong `messages()` của Form Request).
+- Sau kiểm tra: `migrate:fresh --seed` trên `hotel_laravel`.
 
 ---
 
