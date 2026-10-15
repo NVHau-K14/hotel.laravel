@@ -7,6 +7,7 @@ use App\Models\Phong;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 /**
  * Thêm phòng (PhongController::add + PhongModel::validateRoom của bản gốc).
@@ -51,7 +52,7 @@ class StorePhongRequest extends FormRequest
     /**
      * Loại phòng phải tồn tại và chưa bị xóa mềm.
      */
-    public static function loaiPhongConHoatDong(): \Illuminate\Validation\Rules\Exists
+    public static function loaiPhongConHoatDong(): Exists
     {
         return Rule::exists('LOAIPHONG', 'MaLoaiPhong')
             ->where(fn (Builder $q) => $q->where('DaXoa', false)->orWhereNull('DaXoa'));

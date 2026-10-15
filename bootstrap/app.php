@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\DangXuatKhachBiKhoa;
 use App\Http\Middleware\KiemTraQuyen;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -32,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         // Phải chạy TRƯỚC middleware auth, nếu không khách bị khóa vẫn qua được auth:web ở request này
         $middleware->prependToPriorityList(
-            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            before: AuthenticatesRequests::class,
             prepend: DangXuatKhachBiKhoa::class,
         );
 

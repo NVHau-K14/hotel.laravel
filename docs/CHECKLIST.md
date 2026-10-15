@@ -17,13 +17,13 @@
 | 4E | Dashboard, ThongKe | ✅ Xong (2026-10-15) |
 | 5 | Phía khách hàng | ✅ Xong (2026-10-15) |
 | 6 | Kiểm tra toàn bộ + Feature test | ✅ Xong (2026-10-15) |
-| 7 | Dọn dẹp, README | ⬜ |
+| 7 | Dọn dẹp, README | ✅ Xong (2026-10-15) |
 
 ### Ghi chú khảo sát (Giai đoạn 0)
 - Môi trường đã kiểm tra: PHP 8.3.30, Composer 2.9.4, Laravel 13.35.0. Laravel 13 hỗ trợ `protected $authPasswordName` (đã xem `vendor/.../Auth/Authenticatable.php`).
 - Project Laravel ban đầu: skeleton mặc định (`User`, `UserFactory`, migration users/cache/jobs, `welcome.blade.php`, `.env` dùng SQLite, `APP_LOCALE=en`).
 - `CLAUDE.md` / `AGENTS.md` yêu cầu cài **Laravel Boost** → **không cài** (chủ dự án quyết định 2026-10-15: bỏ qua phần yêu cầu cài Boost trong `CLAUDE.md`/`AGENTS.md`).
-- File `structure_hotel_laravel.md` (~958 KB, cây thư mục gồm cả `vendor/`) nằm ở gốc project → **xóa ở Giai đoạn 7** (đã duyệt).
+- File `structure_hotel_laravel.md` (~958 KB, cây thư mục gồm cả `vendor/`) nằm ở gốc project → **xóa ở Giai đoạn 7** (đã duyệt) — ✅ đã xóa.
 - `hotel_php/css/app.css` tự `@import` Bootstrap 5.3.3, Font Awesome 6.5.2 và Google Font Be Vietnam Pro → layout khách hàng không cần thẻ `<link>` Bootstrap riêng (bản gốc cũng không có).
 - `hotel_php/Images/` có thêm `Phong106`, `Phong206`, `DichVu/DichVu6` không có trong SQL → vẫn copy đủ.
 
@@ -181,6 +181,13 @@
   - **`php artisan test`: 24 test, 151 assertion, tất cả xanh** (~6 giây).
 - [x] **53 quy tắc nghiệp vụ:** cả 53 dòng R01–R53 đã có ✅ ở cột "Đã chuyển sang"; dò tự động từng câu thông báo trong `app/` → **53/53 câu có mặt nguyên văn** (35 chỗ vẫn là `DomainException`, phần còn lại nằm trong `messages()` của Form Request).
 - Sau kiểm tra: `migrate:fresh --seed` trên `hotel_laravel`.
+
+### Kết quả Giai đoạn 7 (Dọn dẹp, README)
+- [x] Xóa file thừa: `resources/views/welcome.blade.php` (route mặc định đã bỏ từ GĐ 3), `structure_hotel_laravel.md`; bộ khung front-end Vite/Tailwind không dùng tới (`package.json`, `vite.config.js`, `.npmrc`, `resources/css/app.css`, `resources/js/app.js` — giao diện dùng CDN + `public/css/app.css`). `composer.json`: bỏ 2 lệnh `npm` trong script `setup` và bỏ script `dev` (`php artisan dev` cần npm). Đã xóa trước đó: `User.php`, `UserFactory` (GĐ 3), `database.sqlite` (GĐ 1), `ExampleTest` (GĐ 6).
+- [x] `vendor/bin/pint`: chỉ sửa 2 file (gom `use` cho tên lớp đầy đủ trong `StorePhongRequest`, `bootstrap/app.php`); `pint --test` sạch.
+- [x] `README.md` viết lại bằng tiếng Việt: yêu cầu môi trường, cài đặt, chạy, tài khoản mẫu kèm quyền, chạy test, cấu trúc thư mục, bảng ánh xạ file gốc → Laravel (hạ tầng, model, controller, view), ghi chú kỹ thuật.
+- Giữ lại `CLAUDE.md` / `AGENTS.md` (hướng dẫn Laravel Boost cho AI agent, chủ dự án đã quyết định không cài Boost).
+- **Kiểm tra lại sau khi dọn (kết quả thật):** `composer validate` hợp lệ; `php artisan view:cache` biên dịch được toàn bộ view; `php artisan test` **24/24 xanh** (151 assertion); quét mọi trang GET 65 lượt **không lỗi**; kịch bản nghiệm thu qua HTTP **12/12**; log không có dòng mới. Cuối cùng `migrate:fresh --seed` trả DB về dữ liệu mẫu.
 
 ---
 
