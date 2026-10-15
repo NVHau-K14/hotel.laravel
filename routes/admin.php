@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\ChucVuController;
+use App\Http\Controllers\Admin\CtDichVuController;
 use App\Http\Controllers\Admin\DanhGiaController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DatPhongController;
 use App\Http\Controllers\Admin\DichVuController;
+use App\Http\Controllers\Admin\HoaDonController;
 use App\Http\Controllers\Admin\KhachHangController;
 use App\Http\Controllers\Admin\LoaiPhongController;
 use App\Http\Controllers\Admin\NhanVienController;
@@ -79,18 +82,49 @@ Route::middleware('auth:admin')->group(function () {
         ->middleware('quyen:DANH_GIA')
         ->missing(fn () => redirect()->route('admin.danh-gia.index')->thongBao('danger', 'Không tìm thấy đánh giá.'));
 
-    // TẠM THỜI (Giai đoạn 3): trang chờ cho các module, Giai đoạn 4 thay bằng controller thật
-    $moduleChuaLam = [
-        'dat-phong' => ['DAT_PHONG', 'Quản lý đặt phòng'],
-        'ct-dich-vu' => ['CT_DICH_VU', 'Chi tiết sử dụng dịch vụ'],
-        'hoa-don' => ['HOA_DON', 'Quản lý hóa đơn'],
-        'thong-ke' => ['THONG_KE', 'Báo cáo thống kê'],
-    ];
-    Route::view('dat-phong/{dat_phong}', 'admin.dang-xay-dung', ['tenChucNang' => 'Chi tiết đơn đặt phòng'])
-        ->name('dat-phong.show')->middleware('quyen:DAT_PHONG');
-    foreach ($moduleChuaLam as $uri => [$maQuyen, $tenChucNang]) {
-        Route::view($uri, 'admin.dang-xay-dung', ['tenChucNang' => $tenChucNang])
-            ->name("$uri.index")
-            ->middleware("quyen:$maQuyen");
-    }
+    // Đặt phòng
+    Route::prefix('dat-phong')->name('dat-phong.')->controller(DatPhongController::class)
+        ->middleware('quyen:DAT_PHONG')
+        ->group(function () {
+            $khongCo = fn () => redirect()->route('admin.dat-phong.index')->thongBao('danger', 'Không tìm thấy đơn đặt phòng.');
+            Route::get('/', 'index')->name('index');
+            Route::get('them', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('{dat_phong}', 'show')->name('show')->missing($khongCo);
+            Route::post('{dat_phong}/duyet', 'approve')->name('duyet')->missing($khongCo);
+            Route::post('{dat_phong}/nhan-phong', 'checkin')->name('nhan-phong')->missing($khongCo);
+            Route::post('{dat_phong}/tra-phong', 'checkout')->name('tra-phong')->missing($khongCo);
+            Route::post('{dat_phong}/huy', 'cancel')->name('huy')->missing($khongCo);
+            Route::post('{dat_phong}/dich-vu', 'addService')->name('dich-vu.store')->missing($khongCo);
+            Route::delete('{dat_phong}/dich-vu/{maDichVu}', 'removeService')->name('dich-vu.destroy')
+                ->whereNumber('maDichVu')->missing($khongCo);
+        });
+
+    // Chi tiết dịch vụ (CTDICHVU có khóa ghép nên route xóa nhận 2 mã số)
+    Route::prefix('ct-dich-vu')->name('ct-dich-vu.')->controller(CtDichVuController::class)
+        ->middleware('quyen:CT_DICH_VU')
+        ->group(function () {
+            $khongCoDon = fn () => redirect()->route('admin.dat-phong.index')->thongBao('danger', 'Không tìm thấy đơn đặt phòng.');
+            Route::get('/', 'index')->name('index');
+            Route::get('them', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('don/{dat_phong}', 'addToBooking')->name('them-vao-don')->missing($khongCoDon);
+            Route::post('don/{dat_phong}', 'saveToBooking')->name('luu-vao-don')->missing($khongCoDon);
+            Route::delete('{maCTDatPhong}/{maDichVu}', 'destroy')->name('destroy')
+                ->whereNumber(['maCTDatPhong', 'maDichVu']);
+        });
+
+    // Hóa đơn
+    Route::prefix('hoa-don')->name('hoa-don.')->controller(HoaDonController::class)
+        ->middleware('quyen:HOA_DON')
+        ->group(function () {
+            $khongCo = fn () => redirect()->route('admin.hoa-don.index')->thongBao('danger', 'Hóa đơn không tồn tại.');
+            Route::get('/', 'index')->name('index');
+            Route::get('{hoa_don}', 'show')->name('show')->missing($khongCo);
+            Route::post('{hoa_don}/thanh-toan', 'pay')->name('thanh-toan')->missing($khongCo);
+        });
+
+    // TẠM THỜI: Thống kê làm ở Giai đoạn 4E
+    Route::view('thong-ke', 'admin.dang-xay-dung', ['tenChucNang' => 'Báo cáo thống kê'])
+        ->name('thong-ke.index')->middleware('quyen:THONG_KE');
 });

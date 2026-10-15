@@ -13,7 +13,7 @@
 | 4A | LoaiPhong, Phong, DichVu | ✅ Xong (2026-10-15) |
 | 4B | KhachHang, NhanVien, ChucVu | ✅ Xong (2026-10-15) |
 | 4C | PhanCong, DanhGia | ✅ Xong (2026-10-15) |
-| 4D | DatPhong, CtDichVu, HoaDon | ⬜ |
+| 4D | DatPhong, CtDichVu, HoaDon | ✅ Xong (2026-10-15) |
 | 4E | Dashboard, ThongKe | ⬜ |
 | 5 | Phía khách hàng | ⬜ |
 | 6 | Kiểm tra toàn bộ + Feature test | ⬜ |
@@ -123,6 +123,21 @@
   - Phân công: thiếu nội dung / ngày quá khứ khi thêm / > 50 ký tự (R47) / ngày 30/02 → đúng câu gốc; thêm cho Vấn → hiện "(@van)", "Tạp vụ"; không chọn nhân viên → NULL, "Chưa chỉ định"; sắp ngày giảm dần; "Hôm nay" chỉ lấy phân công hôm nay, ô ngày điền sẵn; tìm từ khóa "Trực"; lọc ngày; sửa sang ngày quá khứ vẫn được; xóa; id 999 → flash; `van` (có PHAN_CONG) 200, `binh` 403.
   - Đánh giá: 2 đánh giá mẫu (tên + email khách), sắp ngày giảm dần; thiếu nội dung / > 255 ký tự (R27) → đúng câu gốc; admin thêm với 9 sao, ngày trống → 5 sao, hôm nay, "Khách vãng lai"; đổi phòng của đánh giá gắn đơn → chặn (R31); 0 sao → 1; đánh giá không gắn đơn đổi phòng được; xóa; id 999 → flash; `binh` 403.
 
+### Kết quả Giai đoạn 4D (Đặt phòng, Chi tiết dịch vụ, Hóa đơn)
+- [x] `DatPhongController` (index + lọc trạng thái/từ khóa, create/store, show, approve, checkin, checkout, cancel, addService, removeService) gọi `DatPhongService`, `HoaDonService`, `CtDichVuService` (inject qua constructor). Duyệt / nhận phòng / trả phòng ghi `MaNhanVien` = nhân viên đang đăng nhập; hủy thì không (như bản gốc).
+- [x] `CtDichVuController` (index, create/store = **đặt** số lượng, addToBooking/saveToBooking = **cộng dồn**, destroy theo khóa ghép, ô `back=detail`).
+- [x] `HoaDonController` (index, show, pay). Hóa đơn đã thanh toán và chi tiết đơn đã hoàn tất hiển thị từ bản chụp `ChiTietJSON`.
+- [x] Form Request: `StoreDatPhongRequest`, `ThemDichVuVaoDonRequest` (dùng chung cho "Gọi thêm dịch vụ" và "Thêm dịch vụ vào đơn"; lỗi → về chi tiết đơn), `CtDichVuRequest`.
+- [x] Route xóa theo khóa ghép nhận 2 số (`{maCTDatPhong}/{maDichVu}`), không dùng model binding → đơn không tồn tại báo "Đơn đặt phòng không tồn tại." từ service (R18). Các route khác dùng binding + `->missing()` ("Không tìm thấy đơn đặt phòng.", "Hóa đơn không tồn tại.").
+- [x] Đã bỏ hết trang tạm của module quản trị (còn `thong-ke` cho 4E). Link "Xem đơn" ở lịch sử khách hàng trỏ tới chi tiết đơn thật.
+- Khác bản gốc (nhỏ): "Gọi thêm dịch vụ" với dịch vụ/số lượng không hợp lệ — bản gốc lặng lẽ bỏ qua, bản Laravel hiện "Thông tin dịch vụ hoặc số lượng không hợp lệ." (câu của saveToBooking). Lỗi nghiệp vụ khi tạo đơn/chuyển trạng thái hiện flash đỏ và quay lại trang (bản gốc hiện trang lỗi riêng).
+- **Kiểm tra (HTTP thật, `viet`): 98/98 đạt**, log không có lỗi. Chạy lại toàn bộ kiểm tra GĐ3 (60), 4A (59), 4B (63), 4C (43) sau khi viết lại `routes/admin.php`: tất cả vẫn đạt.
+  - Danh sách: tab "Tất cả (5)", "Đã xác nhận (5)"; đơn mới nhất trước; lọc trạng thái + SĐT; tìm phòng 201 → 2 đơn.
+  - Tạo đơn: thiếu khách / ngày trả trước ngày nhận / ngày quá khứ (R02) / trạng thái DA_HUY (R09) / nhận ngay khác hôm nay (R10) / khách bị khóa (R11) / phòng bảo trì (R19) / phòng 999 (R17) → đúng câu gốc, giữ dữ liệu đã nhập.
+  - **Kịch bản nghiệm thu (phía admin; phần khách đặt làm ở GĐ 5):** đơn teo, phòng 104, hôm nay → +2 ngày → `CHO_ADMIN_DUYET`, `GiaPhongDat = 300000`; đặt trùng 104 → chặn (R20); trả phòng khi chưa nhận (R08), nhận khi chưa duyệt (R12) → chặn; duyệt → `DA_XAC_NHAN`, phòng "Đã đặt"; nhận phòng → `DANG_SU_DUNG`, phòng "Đang thuê"; số lượng 0 / 10.001 (R23) / dịch vụ 99 (R24) → chặn; **Ăn sáng × 2** (chi tiết đơn) + **Massage × 1** (trang thêm dịch vụ vào đơn) → tổng 1.260.000; trả phòng → hóa đơn `CHUA_THANH_TOAN` **1.260.000 đ**; thêm dịch vụ sau khi lập → hóa đơn tự tính lại (1.290.000), đặt lại số lượng ở trang Chi tiết DV → về 1.260.000; thanh toán hóa đơn mẫu #1 (đơn không đang ở) → chặn (R36); **thanh toán → hóa đơn `DA_THANH_TOAN`, đơn `DA_HOAN_THANH`, `payment_status = DA_THANH_TOAN`, phòng 104 "Trống"**; đổi giá Massage sau đó → hóa đơn/chi tiết đơn vẫn 1.260.000 (snapshot); thêm dịch vụ sau thanh toán → chặn (R21); hóa đơn thứ hai của cùng đơn → chặn (R35); đặt lại 104 cùng ngày sau khi đơn cũ hoàn tất → được.
+  - Hủy đơn → `DA_HUY`, không ghi đè nhân viên; nhận phòng đơn mẫu tháng 5 → "Đơn đặt phòng đã quá ngày trả." (R13); nhận phòng trước ngày nhận (R14); xóa dịch vụ khỏi đơn (2 cách, `back=detail`); xóa chi tiết của đơn 99999 → R18; id không tồn tại → flash; 6 hóa đơn trong danh sách.
+  - Phân quyền: `binh` (Lễ tân) vào đặt phòng / chi tiết DV / hóa đơn → 200; `vung` → 403, kể cả POST thanh toán.
+
 ---
 
 ## 1. Bảng ánh xạ route
@@ -155,25 +170,25 @@ Quy ước:
 | A16 | loai-phong / edit (GET) | GET | `/admin/loai-phong/{loai_phong}/sua` | `admin.loai-phong.edit` | `LoaiPhongController@edit` | LOAI_PHONG | ✅ |
 | A17 | loai-phong / edit (POST) | PUT | `/admin/loai-phong/{loai_phong}` | `admin.loai-phong.update` | `LoaiPhongController@update` | LOAI_PHONG | ✅ |
 | A18 | loai-phong / delete | DELETE | `/admin/loai-phong/{loai_phong}` | `admin.loai-phong.destroy` | `LoaiPhongController@destroy` | LOAI_PHONG | ✅ |
-| A19 | dat-phong / list (`?trangThai`, `?keyword`) | GET | `/admin/dat-phong` | `admin.dat-phong.index` | `DatPhongController@index` | DAT_PHONG | ⬜ |
-| A20 | dat-phong / add (GET) | GET | `/admin/dat-phong/them` | `admin.dat-phong.create` | `DatPhongController@create` | DAT_PHONG | ⬜ |
-| A21 | dat-phong / add (POST) | POST | `/admin/dat-phong` | `admin.dat-phong.store` | `DatPhongController@store` | DAT_PHONG | ⬜ |
-| A22 | dat-phong / detail | GET | `/admin/dat-phong/{dat_phong}` | `admin.dat-phong.show` | `DatPhongController@show` | DAT_PHONG | ⬜ |
-| A23 | dat-phong / approve | POST | `/admin/dat-phong/{dat_phong}/duyet` | `admin.dat-phong.duyet` | `DatPhongController@approve` | DAT_PHONG | ⬜ |
-| A24 | dat-phong / checkin | POST | `/admin/dat-phong/{dat_phong}/nhan-phong` | `admin.dat-phong.nhan-phong` | `DatPhongController@checkin` | DAT_PHONG | ⬜ |
-| A25 | dat-phong / checkout | POST | `/admin/dat-phong/{dat_phong}/tra-phong` | `admin.dat-phong.tra-phong` | `DatPhongController@checkout` | DAT_PHONG | ⬜ |
-| A26 | dat-phong / cancel | POST | `/admin/dat-phong/{dat_phong}/huy` | `admin.dat-phong.huy` | `DatPhongController@cancel` | DAT_PHONG | ⬜ |
-| A27 | dat-phong / addService | POST | `/admin/dat-phong/{dat_phong}/dich-vu` | `admin.dat-phong.dich-vu.store` | `DatPhongController@addService` | DAT_PHONG | ⬜ |
-| A28 | dat-phong / removeService | DELETE | `/admin/dat-phong/{dat_phong}/dich-vu/{dich_vu}` | `admin.dat-phong.dich-vu.destroy` | `DatPhongController@removeService` | DAT_PHONG | ⬜ |
+| A19 | dat-phong / list (`?trangThai`, `?keyword`) | GET | `/admin/dat-phong` | `admin.dat-phong.index` | `DatPhongController@index` | DAT_PHONG | ✅ |
+| A20 | dat-phong / add (GET) | GET | `/admin/dat-phong/them` | `admin.dat-phong.create` | `DatPhongController@create` | DAT_PHONG | ✅ |
+| A21 | dat-phong / add (POST) | POST | `/admin/dat-phong` | `admin.dat-phong.store` | `DatPhongController@store` | DAT_PHONG | ✅ |
+| A22 | dat-phong / detail | GET | `/admin/dat-phong/{dat_phong}` | `admin.dat-phong.show` | `DatPhongController@show` | DAT_PHONG | ✅ |
+| A23 | dat-phong / approve | POST | `/admin/dat-phong/{dat_phong}/duyet` | `admin.dat-phong.duyet` | `DatPhongController@approve` | DAT_PHONG | ✅ |
+| A24 | dat-phong / checkin | POST | `/admin/dat-phong/{dat_phong}/nhan-phong` | `admin.dat-phong.nhan-phong` | `DatPhongController@checkin` | DAT_PHONG | ✅ |
+| A25 | dat-phong / checkout | POST | `/admin/dat-phong/{dat_phong}/tra-phong` | `admin.dat-phong.tra-phong` | `DatPhongController@checkout` | DAT_PHONG | ✅ |
+| A26 | dat-phong / cancel | POST | `/admin/dat-phong/{dat_phong}/huy` | `admin.dat-phong.huy` | `DatPhongController@cancel` | DAT_PHONG | ✅ |
+| A27 | dat-phong / addService | POST | `/admin/dat-phong/{dat_phong}/dich-vu` | `admin.dat-phong.dich-vu.store` | `DatPhongController@addService` | DAT_PHONG | ✅ |
+| A28 | dat-phong / removeService | DELETE | `/admin/dat-phong/{dat_phong}/dich-vu/{maDichVu}` | `admin.dat-phong.dich-vu.destroy` | `DatPhongController@removeService` | DAT_PHONG | ✅ |
 | A29 | dich-vu / list | GET | `/admin/dich-vu` | `admin.dich-vu.index` | `DichVuController@index` | DICH_VU | ✅ |
 | A30 | dich-vu / add (GET) | GET | `/admin/dich-vu/them` | `admin.dich-vu.create` | `DichVuController@create` | DICH_VU | ✅ |
 | A31 | dich-vu / add (POST) | POST | `/admin/dich-vu` | `admin.dich-vu.store` | `DichVuController@store` | DICH_VU | ✅ |
 | A32 | dich-vu / edit (GET) | GET | `/admin/dich-vu/{dich_vu}/sua` | `admin.dich-vu.edit` | `DichVuController@edit` | DICH_VU | ✅ |
 | A33 | dich-vu / edit (POST) | PUT | `/admin/dich-vu/{dich_vu}` | `admin.dich-vu.update` | `DichVuController@update` | DICH_VU | ✅ |
 | A34 | dich-vu / delete | DELETE | `/admin/dich-vu/{dich_vu}` | `admin.dich-vu.destroy` | `DichVuController@destroy` | DICH_VU | ✅ |
-| A35 | hoa-don / list | GET | `/admin/hoa-don` | `admin.hoa-don.index` | `HoaDonController@index` | HOA_DON | ⬜ |
-| A36 | hoa-don / detail | GET | `/admin/hoa-don/{hoa_don}` | `admin.hoa-don.show` | `HoaDonController@show` | HOA_DON | ⬜ |
-| A37 | hoa-don / pay | POST | `/admin/hoa-don/{hoa_don}/thanh-toan` | `admin.hoa-don.thanh-toan` | `HoaDonController@pay` | HOA_DON | ⬜ |
+| A35 | hoa-don / list | GET | `/admin/hoa-don` | `admin.hoa-don.index` | `HoaDonController@index` | HOA_DON | ✅ |
+| A36 | hoa-don / detail | GET | `/admin/hoa-don/{hoa_don}` | `admin.hoa-don.show` | `HoaDonController@show` | HOA_DON | ✅ |
+| A37 | hoa-don / pay | POST | `/admin/hoa-don/{hoa_don}/thanh-toan` | `admin.hoa-don.thanh-toan` | `HoaDonController@pay` | HOA_DON | ✅ |
 | A38 | khach-hang / list (`?keyword`) | GET | `/admin/khach-hang` | `admin.khach-hang.index` | `KhachHangController@index` | KHACH_HANG | ✅ |
 | A39 | khach-hang / toggle | POST | `/admin/khach-hang/{khach_hang}/doi-trang-thai` | `admin.khach-hang.doi-trang-thai` | `KhachHangController@toggle` | KHACH_HANG | ✅ |
 | A40 | khach-hang / history | GET | `/admin/khach-hang/{khach_hang}/lich-su` | `admin.khach-hang.lich-su` | `KhachHangController@history` | KHACH_HANG | ✅ |
@@ -185,12 +200,12 @@ Quy ước:
 | A46 | nhan-vien / delete | DELETE | `/admin/nhan-vien/{nhan_vien}` | `admin.nhan-vien.destroy` | `NhanVienController@destroy` | NHAN_VIEN | ✅ |
 | A47 | chuc-vu / list | GET | `/admin/chuc-vu` | `admin.chuc-vu.index` | `ChucVuController@index` | CHUC_VU | ✅ |
 | A48 | chuc-vu / updatePermissions (`maChucVu` từ input ẩn → tham số URL) | PUT | `/admin/chuc-vu/{chuc_vu}/quyen` | `admin.chuc-vu.quyen.update` | `ChucVuController@updatePermissions` | CHUC_VU | ✅ |
-| A49 | ct-dich-vu / list | GET | `/admin/ct-dich-vu` | `admin.ct-dich-vu.index` | `CtDichVuController@index` | CT_DICH_VU | ⬜ |
-| A50 | ct-dich-vu / add (GET, `?maCTDatPhong` chọn sẵn đơn) | GET | `/admin/ct-dich-vu/them` | `admin.ct-dich-vu.create` | `CtDichVuController@create` | CT_DICH_VU | ⬜ |
-| A51 | ct-dich-vu / add (POST) | POST | `/admin/ct-dich-vu` | `admin.ct-dich-vu.store` | `CtDichVuController@store` | CT_DICH_VU | ⬜ |
-| A52 | ct-dich-vu / addToBooking | GET | `/admin/ct-dich-vu/don/{dat_phong}` | `admin.ct-dich-vu.them-vao-don` | `CtDichVuController@addToBooking` | CT_DICH_VU | ⬜ |
-| A53 | ct-dich-vu / saveToBooking | POST | `/admin/ct-dich-vu/don/{dat_phong}` | `admin.ct-dich-vu.luu-vao-don` | `CtDichVuController@saveToBooking` | CT_DICH_VU | ⬜ |
-| A54 | ct-dich-vu / delete (khóa ghép; input `back=detail` để quay về chi tiết đơn) | DELETE | `/admin/ct-dich-vu/{dat_phong}/{dich_vu}` | `admin.ct-dich-vu.destroy` | `CtDichVuController@destroy` | CT_DICH_VU | ⬜ |
+| A49 | ct-dich-vu / list | GET | `/admin/ct-dich-vu` | `admin.ct-dich-vu.index` | `CtDichVuController@index` | CT_DICH_VU | ✅ |
+| A50 | ct-dich-vu / add (GET, `?maCTDatPhong` chọn sẵn đơn) | GET | `/admin/ct-dich-vu/them` | `admin.ct-dich-vu.create` | `CtDichVuController@create` | CT_DICH_VU | ✅ |
+| A51 | ct-dich-vu / add (POST) | POST | `/admin/ct-dich-vu` | `admin.ct-dich-vu.store` | `CtDichVuController@store` | CT_DICH_VU | ✅ |
+| A52 | ct-dich-vu / addToBooking | GET | `/admin/ct-dich-vu/don/{dat_phong}` | `admin.ct-dich-vu.them-vao-don` | `CtDichVuController@addToBooking` | CT_DICH_VU | ✅ |
+| A53 | ct-dich-vu / saveToBooking | POST | `/admin/ct-dich-vu/don/{dat_phong}` | `admin.ct-dich-vu.luu-vao-don` | `CtDichVuController@saveToBooking` | CT_DICH_VU | ✅ |
+| A54 | ct-dich-vu / delete (khóa ghép; input `back=detail` để quay về chi tiết đơn) | DELETE | `/admin/ct-dich-vu/{maCTDatPhong}/{maDichVu}` | `admin.ct-dich-vu.destroy` | `CtDichVuController@destroy` | CT_DICH_VU | ✅ |
 | A55 | phan-cong / list (`?keyword`, `?ngay`) | GET | `/admin/phan-cong` | `admin.phan-cong.index` | `PhanCongController@index` | PHAN_CONG | ✅ |
 | A56 | phan-cong / homNay | GET | `/admin/phan-cong/hom-nay` | `admin.phan-cong.hom-nay` | `PhanCongController@homNay` | PHAN_CONG | ✅ |
 | A57 | phan-cong / add (GET) | GET | `/admin/phan-cong/them` | `admin.phan-cong.create` | `PhanCongController@create` | PHAN_CONG | ✅ |
@@ -245,8 +260,8 @@ Ghi chú route:
 ### `config/helpers.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R01 | 68 | `validate_stay`: ngày sai định dạng hoặc ngày trả ≤ ngày nhận (dùng ở đặt phòng, chuyển trạng thái, tính hóa đơn, lọc phòng) | Ngày nhận/trả không hợp lệ. Ngày trả phải sau ngày nhận. | Form Request (`date`, `after:ngayNhan`) + `DatPhongService` | `DatPhongService::validateStay` ✅ (Form Request: chờ GĐ 4D/5) |
-| R02 | 71 | `validate_stay`: ngày nhận < hôm nay (trừ khi `allowPast`) | Ngày nhận phòng không được nằm trong quá khứ. | Form Request (`after_or_equal:today`) + `DatPhongService::createBooking` | `DatPhongService::validateStay` ✅ (Form Request: chờ GĐ 4D/5) |
+| R01 | 68 | `validate_stay`: ngày sai định dạng hoặc ngày trả ≤ ngày nhận (dùng ở đặt phòng, chuyển trạng thái, tính hóa đơn, lọc phòng) | Ngày nhận/trả không hợp lệ. Ngày trả phải sau ngày nhận. | Form Request (`date`, `after:ngayNhan`) + `DatPhongService` | `DatPhongService::validateStay` ✅; admin: `StoreDatPhongRequest` (`date_format`, `after:ngayNhan`) ✅ (khách: GĐ 5) |
+| R02 | 71 | `validate_stay`: ngày nhận < hôm nay (trừ khi `allowPast`) | Ngày nhận phòng không được nằm trong quá khứ. | Form Request (`after_or_equal:today`) + `DatPhongService::createBooking` | `DatPhongService::validateStay` ✅; admin: `StoreDatPhongRequest` (`date_format`, `after:ngayNhan`) ✅ (khách: GĐ 5) |
 | R03 | 77 | `validate_customer`: họ tên rỗng/>255 hoặc SĐT không khớp `/^[+0-9][0-9 .()-]{7,19}$/` | Vui lòng nhập họ tên và số điện thoại hợp lệ. | Form Request đặt phòng/đăng ký (`regex`, `max`) | `Client\DangKyRequest` ✅ (đặt phòng: GĐ 5) |
 | R04 | 80 | `validate_customer`: email sai/ >254, địa chỉ >255, CMND >20 | Email, địa chỉ hoặc số giấy tờ không hợp lệ hoặc quá dài. | Form Request đặt phòng/đăng ký | `Client\DangKyRequest` ✅ (đặt phòng: GĐ 5) |
 | R05 | 93 | `upload_image`: lỗi upload hoặc > 5 MB | Không tải được ảnh. Vui lòng chọn ảnh tối đa 5 MB. | Form Request Phong/DichVu (`max:5120`) | `Concerns\KiemTraAnhTaiLen` (`file`, `max:5120`) ✅ |
@@ -265,7 +280,7 @@ Ghi chú route:
 ### `models/DatPhongModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R09 | 90 | createBooking: trạng thái khởi tạo ngoài `CHO_ADMIN_DUYET, DA_XAC_NHAN, DANG_SU_DUNG` | Trạng thái đặt phòng không hợp lệ. | `StoreDatPhongRequest` (`in:`) + `DatPhongService::createBooking` | `DatPhongService::createBooking` ✅ (Form Request: chờ GĐ 4D) |
+| R09 | 90 | createBooking: trạng thái khởi tạo ngoài `CHO_ADMIN_DUYET, DA_XAC_NHAN, DANG_SU_DUNG` | Trạng thái đặt phòng không hợp lệ. | `StoreDatPhongRequest` (`in:`) + `DatPhongService::createBooking` | `Admin\StoreDatPhongRequest` (`in:`) + `DatPhongService::createBooking` ✅ |
 | R10 | 91 | createBooking `DANG_SU_DUNG` mà ngày nhận ≠ hôm nay | Chỉ nhận phòng trong ngày bắt đầu lưu trú. | `DatPhongService::createBooking` | `DatPhongService::createBooking` ✅ |
 | R11 | 98 | Khách không tồn tại hoặc `KHOA` | Khách hàng không tồn tại hoặc đã bị khóa. | `DatPhongService::createBooking` | `DatPhongService::createBooking` ✅ |
 | R12 | 128 | Chuyển trạng thái sai luồng (`CHO_ADMIN_DUYET→DA_XAC_NHAN/DA_HUY`, `DA_XAC_NHAN→DANG_SU_DUNG/DA_HUY`, `DANG_SU_DUNG→DA_HOAN_THANH`) | Không thể chuyển trạng thái của đơn đặt phòng này. | `DatPhongService::updateStatus` | `DatPhongService::updateStatus` ✅ |
@@ -283,10 +298,10 @@ Ghi chú route:
 ### `models/CtDichVuModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R23 | 19 | save: số lượng < 1 hoặc > 10.000 (kể cả tổng sau khi cộng dồn) | Số lượng dịch vụ phải từ 1 đến 10.000. | Form Request (`between:1,10000`) + `CtDichVuService::save` | `CtDichVuService::save` ✅ (Form Request: chờ GĐ 4D) |
+| R23 | 19 | save: số lượng < 1 hoặc > 10.000 (kể cả tổng sau khi cộng dồn) | Số lượng dịch vụ phải từ 1 đến 10.000. | Form Request (`between:1,10000`) + `CtDichVuService::save` | `Admin\ThemDichVuVaoDonRequest` / `CtDichVuRequest` (`min:1`) + `CtDichVuService::save` (`> 10.000`) ✅ |
 | R24 | 23 | Dịch vụ không tồn tại | Dịch vụ không tồn tại. | `CtDichVuService::save` | `CtDichVuService::save` ✅ |
 | R25 | 27 | Tổng tiền dịch vụ > 2.147.483.647 | Tổng tiền dịch vụ vượt giới hạn cho phép. | `CtDichVuService::save` | `CtDichVuService::save` ✅ |
-| R26 | 43 | addToBooking: số lượng < 1 | Số lượng dịch vụ phải lớn hơn 0. | Form Request (`min:1`) + `CtDichVuService::addToBooking` | `CtDichVuService::addToBooking` ✅ (Form Request: chờ GĐ 4D) |
+| R26 | 43 | addToBooking: số lượng < 1 | Số lượng dịch vụ phải lớn hơn 0. | Form Request (`min:1`) + `CtDichVuService::addToBooking` | `Admin\ThemDichVuVaoDonRequest` (`min:1`) + `CtDichVuService::addToBooking` ✅ |
 
 ### `models/DanhGiaModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
@@ -399,14 +414,14 @@ Ghi chú route:
 | `admin/phan-cong/form.php` | `admin/phan-cong/form.blade.php` | ✅ |
 | `admin/danh-gia/list.php` | `admin/danh-gia/index.blade.php` | ✅ |
 | `admin/danh-gia/form.php` | `admin/danh-gia/form.blade.php` | ✅ |
-| `admin/dat-phong/list.php` | `admin/dat-phong/index.blade.php` | ⬜ |
-| `admin/dat-phong/form.php` | `admin/dat-phong/create.blade.php` | ⬜ |
-| `admin/dat-phong/detail.php` | `admin/dat-phong/show.blade.php` | ⬜ |
-| `admin/ct-dich-vu/list.php` | `admin/ct-dich-vu/index.blade.php` | ⬜ |
-| `admin/ct-dich-vu/form.php` | `admin/ct-dich-vu/create.blade.php` | ⬜ |
-| `admin/ct-dich-vu/them-vao-don.php` | `admin/ct-dich-vu/them-vao-don.blade.php` | ⬜ |
-| `admin/hoa-don/list.php` | `admin/hoa-don/index.blade.php` | ⬜ |
-| `admin/hoa-don/detail.php` | `admin/hoa-don/show.blade.php` | ⬜ |
+| `admin/dat-phong/list.php` | `admin/dat-phong/index.blade.php` | ✅ |
+| `admin/dat-phong/form.php` | `admin/dat-phong/create.blade.php` | ✅ |
+| `admin/dat-phong/detail.php` | `admin/dat-phong/show.blade.php` | ✅ |
+| `admin/ct-dich-vu/list.php` | `admin/ct-dich-vu/index.blade.php` | ✅ |
+| `admin/ct-dich-vu/form.php` | `admin/ct-dich-vu/create.blade.php` | ✅ |
+| `admin/ct-dich-vu/them-vao-don.php` | `admin/ct-dich-vu/them-vao-don.blade.php` | ✅ |
+| `admin/hoa-don/list.php` | `admin/hoa-don/index.blade.php` | ✅ |
+| `admin/hoa-don/detail.php` | `admin/hoa-don/show.blade.php` | ✅ |
 | `admin/thong-ke/index.php` | `admin/thong-ke/index.blade.php` | ⬜ |
 | (HTML 403 trong `Auth::requirePermission`) | `errors/403.blade.php` | ✅ |
 | (thông báo CSRF trong `guard_request`) | `errors/419.blade.php` | ✅ |
