@@ -15,7 +15,7 @@
 | 4C | PhanCong, DanhGia | ✅ Xong (2026-10-15) |
 | 4D | DatPhong, CtDichVu, HoaDon | ✅ Xong (2026-10-15) |
 | 4E | Dashboard, ThongKe | ✅ Xong (2026-10-15) |
-| 5 | Phía khách hàng | ⬜ |
+| 5 | Phía khách hàng | ✅ Xong (2026-10-15) |
 | 6 | Kiểm tra toàn bộ + Feature test | ⬜ |
 | 7 | Dọn dẹp, README | ⬜ |
 
@@ -79,7 +79,7 @@
 - [x] Layout `admin/layouts/app.blade.php` + `nav.blade.php` (ẩn nav khi `hideNav`), `client/layouts/app.blade.php`; trang lỗi `errors/403, 404, 405, 419, 422` tiếng Việt (`errors/khung.blade.php`).
 - [x] Form Request: `Admin\DangNhapRequest`, `Admin\DoiMatKhauRequest` (`current_password:admin`, `same`, `different`, `$stopOnFirstFailure`), `Client\DangNhapRequest`, `Client\DangKyRequest`.
 - [x] Controller: `Admin\AuthController` (đăng nhập, đổi mật khẩu, đăng xuất chỉ guard admin + `regenerateToken()`, không `invalidate()`), `Admin\DashboardController` (khung trang), `Client\AccountController` (đăng nhập email/SĐT, đăng ký, đăng xuất). Mật khẩu kiểm tra bằng `Hash::check`, tự rehash nếu cần như bản gốc.
-- **TẠM THỜI:** ~~các trang module admin (`admin.*.index`)~~ (đã thay hết ở GĐ 4A–4E) và trang khách (`trang-chu`, `lien-he`, `phong.index`, `dich-vu.index`, `danh-gia.index`, `tai-khoan.ho-so`, `tai-khoan.lich-su`) đang là `Route::view` trỏ tới `admin/dang-xay-dung` / `client/dang-xay-dung` để menu và kiểm tra phân quyền chạy được. Giai đoạn 4/5 thay bằng controller thật rồi xóa 2 view này.
+- **TẠM THỜI:** ~~các trang module admin (`admin.*.index`)~~ (đã thay hết ở GĐ 4A–4E) và ~~trang khách (`trang-chu`, `lien-he`, `phong.index`, `dich-vu.index`, `danh-gia.index`, `tai-khoan.ho-so`, `tai-khoan.lich-su`)~~ (đã thay hết ở GĐ 5) đang là `Route::view` trỏ tới `admin/dang-xay-dung` / `client/dang-xay-dung` để menu và kiểm tra phân quyền chạy được. Giai đoạn 4/5 thay bằng controller thật rồi xóa 2 view này.
 - Ghi chú: Form Request báo lỗi theo thứ tự trường; khi một form có **nhiều lỗi cùng lúc**, câu đầu tiên có thể khác bản gốc (vd. họ tên quá dài + thiếu mật khẩu). Từng lỗi riêng lẻ cho đúng câu gốc.
 - **Kiểm tra (kết quả thật, `curl` có cookie qua `http://hotel.laravel.test`): 60/60 đạt**, `storage/logs/laravel.log` không có lỗi. Sau đó chạy `migrate:fresh --seed` để trả dữ liệu mẫu.
   - Chưa đăng nhập: `/admin/phong` → 302 `/admin/dang-nhap` + "Vui lòng đăng nhập để tiếp tục."; `/tai-khoan/lich-su` → 302 `/tai-khoan/dang-nhap` + flash warning. GET `/admin/dang-xuat` → 405; POST thiếu `_token` → 419; `/admin/khong-co` → 404 (L7).
@@ -148,6 +148,26 @@
   - Dữ liệu thử: kịch bản nghiệm thu (hóa đơn #6 = 1.260.000, đã thanh toán hôm nay) + hóa đơn mẫu đã thanh toán rải tháng 05/2026, 10/2026, 01/2025, 12/2025 (1 hóa đơn tháng này chưa thanh toán → không tính) + 2 đơn chờ duyệt + phòng đủ trạng thái (`Đang thuê`, `Đã đặt`, `Đang sử dụng` cũ, `Bảo trì`, `NULL`). Kết quả: tổng doanh thu 5.110.000, tháng này 1.610.000, phòng trống 10 (gồm `NULL`), đang thuê/đã đặt 3 (gồm "Đang sử dụng"), bảo trì 2.
   - **HTTP thật (`viet`): 34/34 đạt** — 4 thẻ dashboard đúng số, "Đơn đặt phòng chờ duyệt (2)" mới nhất trước, tên khách / SĐT / loại phòng / ngày đúng, nút Duyệt trên dashboard → đơn chuyển trạng thái, còn (1); thống kê năm 2026 / 2025 / 2019 đúng dữ liệu biểu đồ và bảng 12 tháng, ô năm chọn đúng, `?year=abc` → "Năm 0" như bản gốc; `vung` vào dashboard 200, thống kê 403; `binh` thống kê 403; chưa đăng nhập → 302. Log không có lỗi mới.
   - Sau kiểm tra: `migrate:fresh --seed`, so lại với code gốc → khớp (doanh thu 0, 15 phòng trống, 0 đơn chờ duyệt).
+
+### Kết quả Giai đoạn 5 (Phía khách hàng)
+- [x] Controller `app/Http/Controllers/Client/`: `HomeController` (trang chủ: 6 phòng đầu + tất cả dịch vụ; liên hệ), `RoomController` (danh sách + lọc loại/giá/ngày trống như admin; chi tiết), `BookingController` (form, gửi, trang thành công), `ServiceController`, `ReviewController` (xem + gửi), `AccountController` thêm `profile`, `history`, `detail`.
+- [x] `DatPhongService::datPhongTrucTuyen()`: trong một transaction — khóa phòng + kiểm tra trùng lịch, chọn khách (đã đăng nhập → cập nhật thông tin; khách vãng lai trong phiên chưa có mật khẩu → dùng lại + cập nhật; còn lại → tạo khách không mật khẩu), rồi `createBooking()`. Khách vãng lai: lưu `guest_booking_ids.{mã}` và `guest_customer_id` vào session.
+- [x] Form Request: `Client\DatPhongRequest` (R01–R04; kiểm tra ngày trước, thông tin khách sau như bản gốc), `Client\GuiDanhGiaRequest` (lỗi → flash + về trang đánh giá như bản gốc, qua `failedValidation`).
+- [x] Lỗi nghiệp vụ khi đặt phòng (trùng lịch, bảo trì, SĐT/email đã có, khách bị khóa) hiện **trong form** như bản gốc (bắt `DomainException` ở controller, giữ dữ liệu đã nhập).
+- [x] Route model binding + `->missing()`: phòng không tồn tại → flash "Không tìm thấy thông tin phòng." / "Vui lòng chọn phòng hợp lệ để đặt." (→ danh sách phòng); đơn không tồn tại ở trang thành công → trang chủ; ở chi tiết đơn của tôi → flash "Không tìm thấy đơn đặt phòng hoặc bạn không có quyền truy cập." (→ lịch sử).
+- [x] Sửa **L2** (chi tiết đơn: thêm `DA_HOAN_THANH` → "Hoàn tất" `bg-success`, bỏ 2 mã không tồn tại) và **L3** (`colspan="6"`).
+- [x] Đã xóa view tạm `client/dang-xay-dung.blade.php`; không còn `Route::view` tạm nào.
+- Khác bản gốc (nhỏ): mã phòng đặt nằm trong URL (`/phong/{mã}/dat-phong`) thay cho ô ẩn `maPhong`. Khi một form có **nhiều lỗi cùng lúc**, câu báo đầu tiên có thể khác bản gốc (vd. ngày quá khứ + ngày trả trước ngày nhận → R02 thay vì R01; đánh giá > 255 ký tự cho phòng không được đánh giá → R27 thay vì "Bạn chỉ được đánh giá…"). Từng lỗi riêng lẻ đều đúng câu gốc.
+- **Kiểm tra (kết quả thật):**
+  - **So giao diện với bản gốc:** chạy `hotel_php` (chỉ đọc) bằng `php -S` với `HOTEL_DB_NAME=hotel_laravel`, lấy phần chữ hiển thị (kèm giá trị các ô input) của từng trang hai bên rồi `diff`: trang chủ, liên hệ, danh sách phòng (không lọc / lọc loại + giá / lọc ngày / ngày sai / không có kết quả), chi tiết phòng, dịch vụ, đánh giá (chưa đăng nhập + đã đăng nhập), form đặt phòng (khách lạ + khách đăng nhập, có/không có ngày), hồ sơ, lịch sử, chi tiết đơn (chưa có dịch vụ + đã thanh toán), trang thành công → **giống hệt**, chỉ khác tên ô token CSRF, ô ẩn `c`/`maPhong` của bản gốc và nhãn "Hoàn tất" (sửa L2).
+  - **HTTP thật trên Laravel: 72/72 đạt** (47 đặt phòng / lịch sử / khách vãng lai + 25 đánh giá / bản chụp / đăng xuất).
+  - **Kịch bản nghiệm thu (phần khách):** `teo@gmail.com` đặt **phòng 104**, hôm nay → +2 ngày → đơn #6 `CHO_ADMIN_DUYET`, `GiaPhongDat = 300000`; đặt trùng ngày → chặn (R20). Admin duyệt → nhận phòng → Ăn sáng × 2 + Massage × 1 → trả phòng → hóa đơn **1.260.000 đ** → thanh toán → `DA_THANH_TOAN`, đơn `DA_HOAN_THANH`, `payment_status = DA_THANH_TOAN`. Khách xem chi tiết đơn: 2 đêm, 600.000 + 660.000 = **1.260.000 đ**, "Hoàn tất"; đổi giá Massage → vẫn 1.260.000 (bản chụp).
+  - Form đặt phòng: thiếu họ tên / thiếu ngày, ngày trả trước ngày nhận, ngày 30/02 (R01), ngày quá khứ (R02), SĐT sai, họ tên > 255 (R03), email sai, CMND > 20 (R04), SĐT của khách khác (R39), phòng bảo trì (R19) → đúng câu gốc, giữ dữ liệu đã nhập, không tạo đơn. Khách đăng nhập: form điền sẵn thông tin, mặc định hôm nay → mai; lọc ngày ở danh sách phòng được mang sang form.
+  - Khách vãng lai: đặt 201 → tạo khách mới `MatKhau = NULL`, `HOAT_DONG`; đặt tiếp trong cùng phiên → dùng lại khách đó và cập nhật thông tin (không tạo khách mới); dùng SĐT hoặc email của `teo` → R38; khách vãng lai bị khóa → R11. Trang thành công: chủ đơn / phiên đã đặt xem được; phiên khác, khách khác, đơn 999 → trang chủ; đăng xuất → xóa `guest_booking_ids` (không xem lại được).
+  - Tài khoản: lịch sử chỉ có đơn của mình (mới nhất trước); xem đơn của khách khác / đơn 999 → chặn + flash; chưa đăng nhập vào lịch sử / chi tiết đơn → trang đăng nhập + cảnh báo; đã đăng nhập vào trang đăng nhập → lịch sử.
+  - Đánh giá: đơn hoàn tất nhưng chưa qua ngày trả → chưa có form, gửi thẳng → chặn; qua ngày trả → form chỉ có phòng 104; chưa chọn phòng / mã không phải số / nội dung trống / > 255 (R27) / phòng 101 → đúng câu gốc, không lưu; gửi hợp lệ với 9 sao → lưu 5 sao, gắn khách + đơn #6, ngày hôm nay, flash cảm ơn, hiện đầu danh sách; gửi lần hai → chặn; chưa đăng nhập POST → trang đăng nhập.
+  - Route gọi sai method → 405. `hotel_php` không có file nào bị thay đổi. Log Laravel không có lỗi từ các lượt kiểm tra (2 lỗi 1366 lúc 17:14 là do script kiểm tra gửi chữ có dấu qua dòng lệnh Windows bị sai mã hóa; đã sửa script và chạy lại).
+  - Sau kiểm tra: `migrate:fresh --seed` (5 đơn, 5 khách, 2 đánh giá).
 
 ---
 
@@ -237,23 +257,23 @@ Quy ước:
 
 | # | Gốc (c / a) | Method | URL Laravel | Tên route | Controller@method | Middleware | Xong |
 |---|---|---|---|---|---|---|---|
-| K01 | home / index (và `c` không hợp lệ) | GET | `/` | `trang-chu` | `HomeController@index` | — | ⬜ |
-| K02 | home / contact, contact / * | GET | `/lien-he` | `lien-he` | `HomeController@contact` | — | ⬜ |
-| K03 | room / list (lọc `maLoaiPhong`, `giaTu`, `giaDen`, `ngayNhan`, `ngayTra`; có `keyword` ở model) | GET | `/phong` | `phong.index` | `RoomController@index` | — | ⬜ |
-| K04 | room / detail (`id`) | GET | `/phong/{maPhong}` | `phong.show` | `RoomController@show` | — | ⬜ |
-| K05 | booking / create (GET, `maPhong`, `ngayNhan`, `ngayTra`) | GET | `/phong/{maPhong}/dat-phong` | `dat-phong.create` | `BookingController@create` | — | ⬜ |
-| K06 | booking / create (POST) | POST | `/phong/{maPhong}/dat-phong` | `dat-phong.store` | `BookingController@store` | — | ⬜ |
-| K07 | booking / success (`id`) | GET | `/dat-phong/{datPhong}/thanh-cong` | `dat-phong.thanh-cong` | `BookingController@success` | (kiểm tra session `guest_booking_ids` hoặc chủ đơn) | ⬜ |
-| K08 | service / list | GET | `/dich-vu` | `dich-vu.index` | `ServiceController@index` | — | ⬜ |
-| K09 | review, reviews / list | GET | `/danh-gia` | `danh-gia.index` | `ReviewController@index` | — | ⬜ |
-| K10 | review / submit | POST | `/danh-gia` | `danh-gia.store` | `ReviewController@store` | `auth:web` | ⬜ |
+| K01 | home / index (và `c` không hợp lệ) | GET | `/` | `trang-chu` | `HomeController@index` | — | ✅ |
+| K02 | home / contact, contact / * | GET | `/lien-he` | `lien-he` | `HomeController@contact` | — | ✅ |
+| K03 | room / list (lọc `maLoaiPhong`, `giaTu`, `giaDen`, `ngayNhan`, `ngayTra`; có `keyword` ở model) | GET | `/phong` | `phong.index` | `RoomController@index` | — | ✅ |
+| K04 | room / detail (`id`) | GET | `/phong/{phong}` | `phong.show` | `RoomController@show` | — | ✅ |
+| K05 | booking / create (GET, `maPhong`, `ngayNhan`, `ngayTra`) | GET | `/phong/{phong}/dat-phong` | `dat-phong.create` | `BookingController@create` | — | ✅ |
+| K06 | booking / create (POST) | POST | `/phong/{phong}/dat-phong` | `dat-phong.store` | `BookingController@store` | — | ✅ |
+| K07 | booking / success (`id`) | GET | `/dat-phong/{datPhong}/thanh-cong` | `dat-phong.thanh-cong` | `BookingController@success` | (kiểm tra session `guest_booking_ids` hoặc chủ đơn) | ✅ |
+| K08 | service / list | GET | `/dich-vu` | `dich-vu.index` | `ServiceController@index` | — | ✅ |
+| K09 | review, reviews / list | GET | `/danh-gia` | `danh-gia.index` | `ReviewController@index` | — | ✅ |
+| K10 | review / submit | POST | `/danh-gia` | `danh-gia.store` | `ReviewController@store` | `auth:web` | ✅ |
 | K11 | account / login (GET; mặc định của `account`) | GET | `/tai-khoan/dang-nhap` | `tai-khoan.dang-nhap` | `AccountController@showLogin` | đã đăng nhập → lịch sử | ✅ |
 | K12 | account / login (POST) | POST | `/tai-khoan/dang-nhap` | `tai-khoan.dang-nhap.store` | `AccountController@login` | — | ✅ |
 | K13 | account / register (GET) | GET | `/tai-khoan/dang-ky` | `tai-khoan.dang-ky` | `AccountController@showRegister` | đã đăng nhập → trang chủ | ✅ |
 | K14 | account / register (POST) | POST | `/tai-khoan/dang-ky` | `tai-khoan.dang-ky.store` | `AccountController@register` | — | ✅ |
-| K15 | account / profile | GET | `/tai-khoan` | `tai-khoan.ho-so` | `AccountController@profile` | `auth:web` | ⬜ |
-| K16 | account / history | GET | `/tai-khoan/lich-su` | `tai-khoan.lich-su` | `AccountController@history` | `auth:web` | ⬜ |
-| K17 | account / detail (`id`, chỉ đơn của mình) | GET | `/tai-khoan/don/{datPhong}` | `tai-khoan.chi-tiet` | `AccountController@detail` | `auth:web` | ⬜ |
+| K15 | account / profile | GET | `/tai-khoan` | `tai-khoan.ho-so` | `AccountController@profile` | `auth:web` | ✅ |
+| K16 | account / history | GET | `/tai-khoan/lich-su` | `tai-khoan.lich-su` | `AccountController@history` | `auth:web` | ✅ |
+| K17 | account / detail (`id`, chỉ đơn của mình) | GET | `/tai-khoan/don/{datPhong}` | `tai-khoan.chi-tiet` | `AccountController@detail` | `auth:web` | ✅ |
 | K18 | account / logout | POST | `/tai-khoan/dang-xuat` | `tai-khoan.dang-xuat` | `AccountController@logout` | `auth:web` | ✅ |
 
 Ghi chú route:
@@ -271,10 +291,10 @@ Ghi chú route:
 ### `config/helpers.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R01 | 68 | `validate_stay`: ngày sai định dạng hoặc ngày trả ≤ ngày nhận (dùng ở đặt phòng, chuyển trạng thái, tính hóa đơn, lọc phòng) | Ngày nhận/trả không hợp lệ. Ngày trả phải sau ngày nhận. | Form Request (`date`, `after:ngayNhan`) + `DatPhongService` | `DatPhongService::validateStay` ✅; admin: `StoreDatPhongRequest` (`date_format`, `after:ngayNhan`) ✅ (khách: GĐ 5) |
-| R02 | 71 | `validate_stay`: ngày nhận < hôm nay (trừ khi `allowPast`) | Ngày nhận phòng không được nằm trong quá khứ. | Form Request (`after_or_equal:today`) + `DatPhongService::createBooking` | `DatPhongService::validateStay` ✅; admin: `StoreDatPhongRequest` (`date_format`, `after:ngayNhan`) ✅ (khách: GĐ 5) |
-| R03 | 77 | `validate_customer`: họ tên rỗng/>255 hoặc SĐT không khớp `/^[+0-9][0-9 .()-]{7,19}$/` | Vui lòng nhập họ tên và số điện thoại hợp lệ. | Form Request đặt phòng/đăng ký (`regex`, `max`) | `Client\DangKyRequest` ✅ (đặt phòng: GĐ 5) |
-| R04 | 80 | `validate_customer`: email sai/ >254, địa chỉ >255, CMND >20 | Email, địa chỉ hoặc số giấy tờ không hợp lệ hoặc quá dài. | Form Request đặt phòng/đăng ký | `Client\DangKyRequest` ✅ (đặt phòng: GĐ 5) |
+| R01 | 68 | `validate_stay`: ngày sai định dạng hoặc ngày trả ≤ ngày nhận (dùng ở đặt phòng, chuyển trạng thái, tính hóa đơn, lọc phòng) | Ngày nhận/trả không hợp lệ. Ngày trả phải sau ngày nhận. | Form Request (`date`, `after:ngayNhan`) + `DatPhongService` | `DatPhongService::validateStay` ✅; admin: `StoreDatPhongRequest` (`date_format`, `after:ngayNhan`) ✅; khách: `Client\DatPhongRequest` (`date_format`, `after:ngayNhan`) ✅ |
+| R02 | 71 | `validate_stay`: ngày nhận < hôm nay (trừ khi `allowPast`) | Ngày nhận phòng không được nằm trong quá khứ. | Form Request (`after_or_equal:today`) + `DatPhongService::createBooking` | `DatPhongService::validateStay` ✅; admin: `StoreDatPhongRequest` ✅; khách: `Client\DatPhongRequest` (`after_or_equal:today`) ✅ |
+| R03 | 77 | `validate_customer`: họ tên rỗng/>255 hoặc SĐT không khớp `/^[+0-9][0-9 .()-]{7,19}$/` | Vui lòng nhập họ tên và số điện thoại hợp lệ. | Form Request đặt phòng/đăng ký (`regex`, `max`) | `Client\DangKyRequest` ✅; `Client\DatPhongRequest` (`max:255`, `regex`) ✅ |
+| R04 | 80 | `validate_customer`: email sai/ >254, địa chỉ >255, CMND >20 | Email, địa chỉ hoặc số giấy tờ không hợp lệ hoặc quá dài. | Form Request đặt phòng/đăng ký | `Client\DangKyRequest` ✅; `Client\DatPhongRequest` (`email:filter`, `max`) ✅ |
 | R05 | 93 | `upload_image`: lỗi upload hoặc > 5 MB | Không tải được ảnh. Vui lòng chọn ảnh tối đa 5 MB. | Form Request Phong/DichVu (`max:5120`) | `Concerns\KiemTraAnhTaiLen` (`file`, `max:5120`) ✅ |
 | R06 | 98 | `upload_image`: không phải JPG/PNG/WebP/GIF hợp lệ | Chỉ chấp nhận ảnh JPG, PNG, WebP hoặc GIF hợp lệ. | Form Request (`image`, `mimes:jpg,jpeg,png,webp,gif`) | `Concerns\KiemTraAnhTaiLen` (`image`, `mimes`) ✅ |
 
@@ -317,7 +337,7 @@ Ghi chú route:
 ### `models/DanhGiaModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R27 | 48 | create: nội dung rỗng/>255 hoặc ngày sai | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` / `ReviewRequest` | `Admin\DanhGiaRequest` ✅ (gửi đánh giá phía khách: GĐ 5) |
+| R27 | 48 | create: nội dung rỗng/>255 hoặc ngày sai | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` / `ReviewRequest` | `Admin\DanhGiaRequest` ✅; `Client\GuiDanhGiaRequest` (`max:255`) ✅ |
 | R28 | 51 | Đánh giá gắn đơn: đơn phải `DA_HOAN_THANH`, đúng khách, đúng phòng | Chỉ đánh giá lần lưu trú đã hoàn tất của chính bạn. | Model `DanhGia` / `ReviewController@store` (trong transaction, khóa đơn) | `DanhGia::taoDanhGia` ✅ |
 | R29 | 54 | Đơn đã có đánh giá | Bạn đã đánh giá lần lưu trú này. | như R28 | `DanhGia::taoDanhGia` ✅ |
 | R30 | 80 | update: như R27 | Đánh giá cần nội dung tối đa 255 ký tự và ngày hợp lệ. | `DanhGiaRequest` | `Admin\DanhGiaRequest` ✅ |
@@ -437,19 +457,19 @@ Ghi chú route:
 | (HTML 403 trong `Auth::requirePermission`) | `errors/403.blade.php` | ✅ |
 | (thông báo CSRF trong `guard_request`) | `errors/419.blade.php` | ✅ |
 | `client/layouts/header.php` + `footer.php` | `client/layouts/app.blade.php` | ✅ |
-| `client/home.php` | `client/home.blade.php` | ⬜ |
-| `client/contact.php` | `client/contact.blade.php` | ⬜ |
-| `client/rooms.php` | `client/rooms.blade.php` | ⬜ |
-| `client/room-detail.php` | `client/room-detail.blade.php` | ⬜ |
-| `client/services.php` | `client/services.blade.php` | ⬜ |
-| `client/reviews.php` | `client/reviews.blade.php` | ⬜ |
-| `client/booking.php` | `client/booking.blade.php` | ⬜ |
-| `client/booking-success.php` | `client/booking-success.blade.php` | ⬜ |
+| `client/home.php` | `client/home.blade.php` | ✅ |
+| `client/contact.php` | `client/contact.blade.php` | ✅ |
+| `client/rooms.php` | `client/rooms.blade.php` | ✅ |
+| `client/room-detail.php` | `client/room-detail.blade.php` | ✅ |
+| `client/services.php` | `client/services.blade.php` | ✅ |
+| `client/reviews.php` | `client/reviews.blade.php` | ✅ |
+| `client/booking.php` | `client/booking.blade.php` | ✅ |
+| `client/booking-success.php` | `client/booking-success.blade.php` | ✅ |
 | `client/account/login.php` | `client/account/login.blade.php` | ✅ |
 | `client/account/register.php` | `client/account/register.blade.php` | ✅ |
-| `client/account/profile.php` | `client/account/profile.blade.php` | ⬜ |
-| `client/account/history.php` | `client/account/history.blade.php` | ⬜ |
-| `client/account/booking-detail.php` | `client/account/booking-detail.blade.php` | ⬜ |
+| `client/account/profile.php` | `client/account/profile.blade.php` | ✅ |
+| `client/account/history.php` | `client/account/history.blade.php` | ✅ |
+| `client/account/booking-detail.php` | `client/account/booking-detail.blade.php` | ✅ |
 
 Quy ước Blade: lỗi Form Request hiển thị đúng chỗ `alert alert-danger` cũ bằng `$errors->first()`; giá trị cũ dùng `old()`; form đổi dữ liệu dùng `@csrf` + `@method`.
 
@@ -472,8 +492,8 @@ Quy ước Blade: lỗi Form Request hiển thị đúng chỗ `alert alert-dang
 | # | Mô tả | Đề xuất | Trạng thái |
 |---|---|---|---|
 | L1 | `views/admin/phong/form.php` có lựa chọn "Đang sử dụng" nhưng `PhongModel` chỉ nhận 4 trạng thái → lưu báo "Trạng thái phòng không hợp lệ." (mục 5 kế hoạch). | Form chỉ còn `Trống, Đã đặt, Đang thuê, Bảo trì`; thống kê/badge vẫn đếm "Đang sử dụng". | Đã duyệt sẵn, sửa ở 4A |
-| L2 | `views/client/account/booking-detail.php`: bảng màu/nhãn trạng thái dùng `DA_THANH_TOAN`, `DA_TRA_PHONG` (không tồn tại) và thiếu `DA_HOAN_THANH` → đơn hoàn tất hiện mã thô "DA_HOAN_THANH" với badge xám. | Thêm `DA_HOAN_THANH` → "Hoàn tất", `bg-success` (giống `history.php`). | Đã duyệt: sửa ở GĐ 5 |
-| L3 | `views/client/account/history.php`: dòng "chưa có đơn" dùng `colspan="5"` nhưng bảng có 6 cột. | Đổi thành `colspan="6"`. | Đã duyệt: sửa ở GĐ 5 |
+| L2 | `views/client/account/booking-detail.php`: bảng màu/nhãn trạng thái dùng `DA_THANH_TOAN`, `DA_TRA_PHONG` (không tồn tại) và thiếu `DA_HOAN_THANH` → đơn hoàn tất hiện mã thô "DA_HOAN_THANH" với badge xám. | Thêm `DA_HOAN_THANH` → "Hoàn tất", `bg-success` (giống `history.php`). | Đã sửa ở GĐ 5 |
+| L3 | `views/client/account/history.php`: dòng "chưa có đơn" dùng `colspan="5"` nhưng bảng có 6 cột. | Đổi thành `colspan="6"`. | Đã sửa ở GĐ 5 |
 | L4 | `views/admin/khach-hang/history.php` hiện mã trạng thái thô (vd. `DA_XAC_NHAN`) trong badge xám. | Giữ nguyên (chỉ là hiển thị), trừ khi muốn dùng nhãn tiếng Việt. | Đã duyệt: giữ nguyên |
 | L5 | Trang `ct-dich-vu&a=addToBooking` (`them-vao-don.php`) không được link từ đâu; tham số `back=detail` của `ct-dich-vu&a=delete` cũng không view nào dùng. | Vẫn giữ route và tham số để đủ chức năng gốc. | Ghi nhận |
 | L6 | Đăng nhập admin luôn chuyển về dashboard; chức vụ không có quyền DASHBOARD sẽ thấy 403 ngay sau đăng nhập (dữ liệu mẫu: cả 4 chức vụ đều có DASHBOARD nên không gặp). | Giữ nguyên. | Ghi nhận |

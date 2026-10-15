@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Client\DangKyRequest;
 use App\Http\Requests\Client\DangNhapRequest;
+use App\Models\CtDichVu;
+use App\Models\DatPhong;
 use App\Models\KhachHang;
+use App\Services\HoaDonService;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 /**
- * Tài khoản khách hàng (guard "web"). Giai đoạn 3: đăng nhập, đăng ký, đăng xuất.
+ * Tài khoản khách hàng (guard "web"): đăng nhập, đăng ký, đăng xuất, hồ sơ, lịch sử và chi tiết đơn của mình.
  */
 class AccountController extends Controller
 {
@@ -78,6 +81,39 @@ class AccountController extends Controller
         $request->session()->regenerate();
 
         return redirect()->route('trang-chu')->thongBao('success', 'Đăng ký tài khoản thành công!');
+    }
+
+    public function profile(Request $request): View
+    {
+        return view('client.account.profile', ['khachHang' => $request->user('web')]);
+    }
+
+    public function history(Request $request): View
+    {
+        return view('client.account.history', [
+            'bookings' => $request->user('web')->datPhongs()
+                ->with('phong.loaiPhong')
+                ->orderByDesc('MaCTDatPhong')
+                ->get(),
+        ]);
+    }
+
+    /**
+     * Chi tiết một đơn — chỉ xem được đơn của chính mình.
+     */
+    public function detail(Request $request, DatPhong $datPhong, HoaDonService $hoaDonService): View|RedirectResponse
+    {
+        if ((int) $datPhong->MaKhachHang !== (int) $request->user('web')->MaKhachHang) {
+            return redirect()->route('tai-khoan.lich-su')
+                ->thongBao('danger', 'Không tìm thấy đơn đặt phòng hoặc bạn không có quyền truy cập.');
+        }
+
+        return view('client.account.booking-detail', [
+            'datPhong' => $datPhong->load('phong.loaiPhong'),
+            'dichVuDaDung' => CtDichVu::cuaDon($datPhong->MaCTDatPhong),
+            // Đơn đã thanh toán: số tiền lấy từ bản chụp hóa đơn
+            'calc' => $hoaDonService->calculateBookingTotal($datPhong->MaCTDatPhong),
+        ]);
     }
 
     public function logout(Request $request): RedirectResponse

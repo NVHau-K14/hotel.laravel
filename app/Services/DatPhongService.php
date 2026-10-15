@@ -87,6 +87,35 @@ class DatPhongService
     }
 
     /**
+     * Khách đặt phòng trên website (BookingController::create của bản gốc). Trả về mã đơn mới.
+     *  - Khách đã đăng nhập: cập nhật thông tin liên hệ của chính tài khoản đó.
+     *  - Khách vãng lai đã đặt trước đó trong phiên này (chưa có mật khẩu): dùng lại và cập nhật.
+     *  - Còn lại: tạo khách hàng mới không mật khẩu. Chỉ biết SĐT/email thì KHÔNG được dùng tài khoản có sẵn.
+     *
+     * @param  array{hoTen: string, email: ?string, dienThoai: string, diaChi: ?string, cmnd: ?string}  $thongTin
+     */
+    public function datPhongTrucTuyen(?KhachHang $khachDangNhap, ?int $maKhachVangLai, array $thongTin, int $maPhong, string $ngayNhan, string $ngayTra): int
+    {
+        return DB::transaction(function () use ($khachDangNhap, $maKhachVangLai, $thongTin, $maPhong, $ngayNhan, $ngayTra) {
+            $this->assertAvailable($maPhong, $ngayNhan, $ngayTra);
+
+            $khachVangLai = ! $khachDangNhap && $maKhachVangLai ? KhachHang::find($maKhachVangLai) : null;
+            if ($khachVangLai && ! empty($khachVangLai->MatKhau)) {
+                $khachVangLai = null;
+            }
+
+            $khachHang = $khachDangNhap ?? $khachVangLai;
+            if ($khachHang) {
+                $khachHang->capNhatThongTin($thongTin['hoTen'], $thongTin['email'], $thongTin['dienThoai'], $thongTin['diaChi'], $thongTin['cmnd']);
+            } else {
+                $khachHang = KhachHang::taoKhachHang($thongTin['hoTen'], $thongTin['email'], $thongTin['dienThoai'], $thongTin['diaChi'], $thongTin['cmnd']);
+            }
+
+            return $this->createBooking($khachHang->MaKhachHang, $maPhong, $ngayNhan, $ngayTra);
+        });
+    }
+
+    /**
      * Chuyển trạng thái đơn theo đúng luồng
      * CHO_ADMIN_DUYET → DA_XAC_NHAN → DANG_SU_DUNG → DA_HOAN_THANH (hoặc DA_HUY).
      * $maNhanVien = null thì giữ nguyên nhân viên đang ghi trên đơn.
