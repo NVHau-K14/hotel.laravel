@@ -11,7 +11,7 @@
 | 2 | Model Eloquent | ✅ Xong (2026-10-15) |
 | 3 | Auth, phân quyền, layout, helper, xử lý lỗi | ✅ Xong (2026-10-15) |
 | 4A | LoaiPhong, Phong, DichVu | ✅ Xong (2026-10-15) |
-| 4B | KhachHang, NhanVien, ChucVu | ⬜ |
+| 4B | KhachHang, NhanVien, ChucVu | ✅ Xong (2026-10-15) |
 | 4C | PhanCong, DanhGia | ⬜ |
 | 4D | DatPhong, CtDichVu, HoaDon | ⬜ |
 | 4E | Dashboard, ThongKe | ⬜ |
@@ -105,6 +105,17 @@
   - Dịch vụ: danh sách 5; giá 0 / tên > 50 ký tự (R40) → đúng câu gốc; thêm "Giặt ủi" kèm ảnh → `/uploads/dichvu/...`; sửa giá + đường dẫn ảnh; xóa dịch vụ đang dùng trong CTDICHVU → lỗi 1451 tiếng Việt; xóa dịch vụ mới được.
   - Phân quyền: `binh` (Lễ tân) → `/admin/phong`, `/admin/loai-phong/them`, DELETE phòng đều 403; `/admin/dich-vu` 200.
 
+### Kết quả Giai đoạn 4B (Khách hàng, Nhân viên, Chức vụ)
+- [x] Khách hàng: `KhachHangController` (index + tìm kiếm, `toggle` POST, `history`); route nhóm `khach-hang.*` có `->missing()` → "Khách hàng không tồn tại.".
+- [x] Nhân viên: `Route::resource('nhan-vien')`, `StoreNhanVienRequest` / `UpdateNhanVienRequest` (luật họ tên, chức vụ, CMND, ngày dùng chung). Thêm: ngày vào làm trống → hôm nay; sửa: mật khẩu trống thì giữ nguyên, ngày vào làm trống → NULL (như bản gốc). Chức vụ không tồn tại → câu thông báo của lỗi 1452 như bản gốc.
+- [x] Chức vụ: `ChucVuController` (index + `updatePermissions` PUT `/admin/chuc-vu/{chuc_vu}/quyen`), `UpdatePermissionsRequest`, ghi quyền trong transaction (`ChucVu::capNhatQuyen`), bỏ mã trùng.
+- [x] TẠM THỜI thêm route `admin.dat-phong.show` (trang chờ) để link "Xem đơn" ở lịch sử khách hàng chạy được; thay bằng trang thật ở 4D.
+- **Kiểm tra (HTTP thật, `viet`): 63/63 đạt**, log không có lỗi ngoài các lỗi 1451 cố ý tạo.
+  - Khách hàng: 5 khách, mã giảm dần; tìm theo SĐT / CMND; khóa #1 → flash, nút "Mở khóa", DB `KHOA`, khách không đăng nhập được; mở khóa lại; lịch sử khách #2 (đơn #2, "Phòng 102 (Bình Dân)", mã trạng thái thô — L4); khách 999 → flash "Khách hàng không tồn tại."; khóa bằng GET → 405.
+  - Nhân viên: thiếu mật khẩu / trùng username (R42) / username > 20 (R41) / CMND > 20 (R45) / ngày sinh tương lai (R46) / chức vụ 99 → đúng câu gốc; thêm "Trần Thị Lan" → ngày vào làm = hôm nay, CMND NULL, mật khẩu bcrypt, đăng nhập được; sửa không đổi mật khẩu → mật khẩu cũ vẫn dùng được; đổi mật khẩu khi sửa → đăng nhập bằng mật khẩu mới; `viet` tự đổi chức vụ → chặn (R43), tự sửa thông tin khác vẫn được; tự xóa → chặn (R44); xóa `binh` (có đơn) → 1451; xóa nhân viên mới → phiên đăng nhập của người đó hết hiệu lực; id 999 → flash.
+  - Chức vụ: 4 thẻ, 22 ô được tick (khớp CHUCVU_QUYEN); lưu DASHBOARD + PHONG cho Bảo vệ → `vung` vào được `/admin/phong`, menu 2 mục; mã quyền lạ → "Danh sách quyền không hợp lệ." (R07), DB không đổi; bỏ tick hết → Tạp vụ mất hết quyền, `van` vào `/admin` → 403 (L6); trả quyền về 22 dòng.
+  - Phân quyền: `binh` → khách hàng 200; nhân viên 403; tự cấp quyền (PUT chức vụ) 403.
+
 ---
 
 ## 1. Bảng ánh xạ route
@@ -156,17 +167,17 @@ Quy ước:
 | A35 | hoa-don / list | GET | `/admin/hoa-don` | `admin.hoa-don.index` | `HoaDonController@index` | HOA_DON | ⬜ |
 | A36 | hoa-don / detail | GET | `/admin/hoa-don/{hoa_don}` | `admin.hoa-don.show` | `HoaDonController@show` | HOA_DON | ⬜ |
 | A37 | hoa-don / pay | POST | `/admin/hoa-don/{hoa_don}/thanh-toan` | `admin.hoa-don.thanh-toan` | `HoaDonController@pay` | HOA_DON | ⬜ |
-| A38 | khach-hang / list (`?keyword`) | GET | `/admin/khach-hang` | `admin.khach-hang.index` | `KhachHangController@index` | KHACH_HANG | ⬜ |
-| A39 | khach-hang / toggle | POST | `/admin/khach-hang/{khach_hang}/doi-trang-thai` | `admin.khach-hang.doi-trang-thai` | `KhachHangController@toggle` | KHACH_HANG | ⬜ |
-| A40 | khach-hang / history | GET | `/admin/khach-hang/{khach_hang}/lich-su` | `admin.khach-hang.lich-su` | `KhachHangController@history` | KHACH_HANG | ⬜ |
-| A41 | nhan-vien / list | GET | `/admin/nhan-vien` | `admin.nhan-vien.index` | `NhanVienController@index` | NHAN_VIEN | ⬜ |
-| A42 | nhan-vien / add (GET) | GET | `/admin/nhan-vien/them` | `admin.nhan-vien.create` | `NhanVienController@create` | NHAN_VIEN | ⬜ |
-| A43 | nhan-vien / add (POST) | POST | `/admin/nhan-vien` | `admin.nhan-vien.store` | `NhanVienController@store` | NHAN_VIEN | ⬜ |
-| A44 | nhan-vien / edit (GET) | GET | `/admin/nhan-vien/{nhan_vien}/sua` | `admin.nhan-vien.edit` | `NhanVienController@edit` | NHAN_VIEN | ⬜ |
-| A45 | nhan-vien / edit (POST) | PUT | `/admin/nhan-vien/{nhan_vien}` | `admin.nhan-vien.update` | `NhanVienController@update` | NHAN_VIEN | ⬜ |
-| A46 | nhan-vien / delete | DELETE | `/admin/nhan-vien/{nhan_vien}` | `admin.nhan-vien.destroy` | `NhanVienController@destroy` | NHAN_VIEN | ⬜ |
-| A47 | chuc-vu / list | GET | `/admin/chuc-vu` | `admin.chuc-vu.index` | `ChucVuController@index` | CHUC_VU | ⬜ |
-| A48 | chuc-vu / updatePermissions (`maChucVu` từ input ẩn → tham số URL) | PUT | `/admin/chuc-vu/{chuc_vu}/quyen` | `admin.chuc-vu.quyen.update` | `ChucVuController@updatePermissions` | CHUC_VU | ⬜ |
+| A38 | khach-hang / list (`?keyword`) | GET | `/admin/khach-hang` | `admin.khach-hang.index` | `KhachHangController@index` | KHACH_HANG | ✅ |
+| A39 | khach-hang / toggle | POST | `/admin/khach-hang/{khach_hang}/doi-trang-thai` | `admin.khach-hang.doi-trang-thai` | `KhachHangController@toggle` | KHACH_HANG | ✅ |
+| A40 | khach-hang / history | GET | `/admin/khach-hang/{khach_hang}/lich-su` | `admin.khach-hang.lich-su` | `KhachHangController@history` | KHACH_HANG | ✅ |
+| A41 | nhan-vien / list | GET | `/admin/nhan-vien` | `admin.nhan-vien.index` | `NhanVienController@index` | NHAN_VIEN | ✅ |
+| A42 | nhan-vien / add (GET) | GET | `/admin/nhan-vien/them` | `admin.nhan-vien.create` | `NhanVienController@create` | NHAN_VIEN | ✅ |
+| A43 | nhan-vien / add (POST) | POST | `/admin/nhan-vien` | `admin.nhan-vien.store` | `NhanVienController@store` | NHAN_VIEN | ✅ |
+| A44 | nhan-vien / edit (GET) | GET | `/admin/nhan-vien/{nhan_vien}/sua` | `admin.nhan-vien.edit` | `NhanVienController@edit` | NHAN_VIEN | ✅ |
+| A45 | nhan-vien / edit (POST) | PUT | `/admin/nhan-vien/{nhan_vien}` | `admin.nhan-vien.update` | `NhanVienController@update` | NHAN_VIEN | ✅ |
+| A46 | nhan-vien / delete | DELETE | `/admin/nhan-vien/{nhan_vien}` | `admin.nhan-vien.destroy` | `NhanVienController@destroy` | NHAN_VIEN | ✅ |
+| A47 | chuc-vu / list | GET | `/admin/chuc-vu` | `admin.chuc-vu.index` | `ChucVuController@index` | CHUC_VU | ✅ |
+| A48 | chuc-vu / updatePermissions (`maChucVu` từ input ẩn → tham số URL) | PUT | `/admin/chuc-vu/{chuc_vu}/quyen` | `admin.chuc-vu.quyen.update` | `ChucVuController@updatePermissions` | CHUC_VU | ✅ |
 | A49 | ct-dich-vu / list | GET | `/admin/ct-dich-vu` | `admin.ct-dich-vu.index` | `CtDichVuController@index` | CT_DICH_VU | ⬜ |
 | A50 | ct-dich-vu / add (GET, `?maCTDatPhong` chọn sẵn đơn) | GET | `/admin/ct-dich-vu/them` | `admin.ct-dich-vu.create` | `CtDichVuController@create` | CT_DICH_VU | ⬜ |
 | A51 | ct-dich-vu / add (POST) | POST | `/admin/ct-dich-vu` | `admin.ct-dich-vu.store` | `CtDichVuController@store` | CT_DICH_VU | ⬜ |
@@ -237,7 +248,7 @@ Ghi chú route:
 ### `controllers/admin/ChucVuController.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R07 | 46 | `permissions` không phải mảng hoặc có mã ngoài 13 quyền | Danh sách quyền không hợp lệ. | `UpdatePermissionsRequest` (`array`, `in:...`) | |
+| R07 | 46 | `permissions` không phải mảng hoặc có mã ngoài 13 quyền | Danh sách quyền không hợp lệ. | `UpdatePermissionsRequest` (`array`, `in:...`) | `Admin\UpdatePermissionsRequest` (`array`, `in:` 13 mã) ✅ |
 
 ### `controllers/admin/DatPhongController.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
@@ -303,12 +314,12 @@ Ghi chú route:
 ### `models/NhanVienModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
 |---|---|---|---|---|---|
-| R41 | 34 | Thêm: username rỗng/>20 hoặc mật khẩu rỗng | Tên đăng nhập tối đa 20 ký tự và mật khẩu không được để trống. | `StoreNhanVienRequest` | |
-| R42 | 37 | Thêm: username đã tồn tại | Tên đăng nhập đã tồn tại. | `StoreNhanVienRequest` (`unique:NHANVIEN,Username`) | |
-| R43 | 58 | Sửa: tự đổi chức vụ của chính mình | Không được tự thay đổi chức vụ của tài khoản đang đăng nhập. | `NhanVienController@update` (so với `auth('admin')->user()`) | |
-| R44 | 93 | Xóa chính mình | Không được xóa tài khoản đang đăng nhập. | `NhanVienController@destroy` | |
-| R45 | 127 | Họ tên rỗng/>100 hoặc CMND >20 | Họ tên hoặc số giấy tờ nhân viên không hợp lệ. | `Store/UpdateNhanVienRequest` | |
-| R46 | 128 | Ngày sinh sai/ở tương lai, ngày vào làm sai | Ngày sinh hoặc ngày vào làm không hợp lệ. | `Store/UpdateNhanVienRequest` (`date`, `before_or_equal:today`) | |
+| R41 | 34 | Thêm: username rỗng/>20 hoặc mật khẩu rỗng | Tên đăng nhập tối đa 20 ký tự và mật khẩu không được để trống. | `StoreNhanVienRequest` | `Admin\StoreNhanVienRequest` (`required`, `max:20`) ✅ |
+| R42 | 37 | Thêm: username đã tồn tại | Tên đăng nhập đã tồn tại. | `StoreNhanVienRequest` (`unique:NHANVIEN,Username`) | `Admin\StoreNhanVienRequest` (`unique:NHANVIEN,Username`) ✅ |
+| R43 | 58 | Sửa: tự đổi chức vụ của chính mình | Không được tự thay đổi chức vụ của tài khoản đang đăng nhập. | `NhanVienController@update` (so với `auth('admin')->user()`) | `Admin\NhanVienController@update` ✅ |
+| R44 | 93 | Xóa chính mình | Không được xóa tài khoản đang đăng nhập. | `NhanVienController@destroy` | `Admin\NhanVienController@destroy` ✅ |
+| R45 | 127 | Họ tên rỗng/>100 hoặc CMND >20 | Họ tên hoặc số giấy tờ nhân viên không hợp lệ. | `Store/UpdateNhanVienRequest` | `Admin\StoreNhanVienRequest::rulesThongTin()` (dùng cho thêm + sửa) ✅ |
+| R46 | 128 | Ngày sinh sai/ở tương lai, ngày vào làm sai | Ngày sinh hoặc ngày vào làm không hợp lệ. | `Store/UpdateNhanVienRequest` (`date`, `before_or_equal:today`) | `Admin\StoreNhanVienRequest::rulesThongTin()` (`date_format:Y-m-d`, `before_or_equal:today`) ✅ |
 
 ### `models/PhanCongModel.php`
 | # | Dòng | Điều kiện | Thông báo | Dự kiến | Đã chuyển sang |
@@ -372,11 +383,11 @@ Ghi chú route:
 | `admin/loai-phong/form.php` | `admin/loai-phong/form.blade.php` | ✅ |
 | `admin/dich-vu/list.php` | `admin/dich-vu/index.blade.php` | ✅ |
 | `admin/dich-vu/form.php` | `admin/dich-vu/form.blade.php` | ✅ |
-| `admin/khach-hang/list.php` | `admin/khach-hang/index.blade.php` | ⬜ |
-| `admin/khach-hang/history.php` | `admin/khach-hang/history.blade.php` | ⬜ |
-| `admin/nhan-vien/list.php` | `admin/nhan-vien/index.blade.php` | ⬜ |
-| `admin/nhan-vien/form.php` | `admin/nhan-vien/form.blade.php` | ⬜ |
-| `admin/chuc-vu/list.php` | `admin/chuc-vu/index.blade.php` | ⬜ |
+| `admin/khach-hang/list.php` | `admin/khach-hang/index.blade.php` | ✅ |
+| `admin/khach-hang/history.php` | `admin/khach-hang/history.blade.php` | ✅ |
+| `admin/nhan-vien/list.php` | `admin/nhan-vien/index.blade.php` | ✅ |
+| `admin/nhan-vien/form.php` | `admin/nhan-vien/form.blade.php` | ✅ |
+| `admin/chuc-vu/list.php` | `admin/chuc-vu/index.blade.php` | ✅ |
 | `admin/phan-cong/list.php` (dùng cho cả `list` và `homNay`) | `admin/phan-cong/index.blade.php` | ⬜ |
 | `admin/phan-cong/form.php` | `admin/phan-cong/form.blade.php` | ⬜ |
 | `admin/danh-gia/list.php` | `admin/danh-gia/index.blade.php` | ⬜ |

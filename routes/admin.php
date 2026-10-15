@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\ChucVuController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DichVuController;
+use App\Http\Controllers\Admin\KhachHangController;
 use App\Http\Controllers\Admin\LoaiPhongController;
+use App\Http\Controllers\Admin\NhanVienController;
 use App\Http\Controllers\Admin\PhongController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,18 +45,38 @@ Route::middleware('auth:admin')->group(function () {
         ->middleware('quyen:DICH_VU')
         ->missing(fn () => redirect()->route('admin.dich-vu.index')->thongBao('danger', 'Không tìm thấy dịch vụ.'));
 
+    Route::prefix('khach-hang')->name('khach-hang.')->controller(KhachHangController::class)
+        ->middleware('quyen:KHACH_HANG')
+        ->group(function () {
+            $khongCo = fn () => redirect()->route('admin.khach-hang.index')->thongBao('danger', 'Khách hàng không tồn tại.');
+            Route::get('/', 'index')->name('index');
+            Route::post('{khach_hang}/doi-trang-thai', 'toggle')->name('doi-trang-thai')->missing($khongCo);
+            Route::get('{khach_hang}/lich-su', 'history')->name('lich-su')->missing($khongCo);
+        });
+
+    Route::resource('nhan-vien', NhanVienController::class)->except('show')
+        ->middleware('quyen:NHAN_VIEN')
+        ->missing(fn () => redirect()->route('admin.nhan-vien.index')->thongBao('danger', 'Nhân viên không tồn tại.'));
+
+    Route::prefix('chuc-vu')->name('chuc-vu.')->controller(ChucVuController::class)
+        ->middleware('quyen:CHUC_VU')
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::put('{chuc_vu}/quyen', 'updatePermissions')->name('quyen.update')
+                ->missing(fn () => redirect()->route('admin.chuc-vu.index'));
+        });
+
     // TẠM THỜI (Giai đoạn 3): trang chờ cho các module, Giai đoạn 4 thay bằng controller thật
     $moduleChuaLam = [
         'dat-phong' => ['DAT_PHONG', 'Quản lý đặt phòng'],
         'ct-dich-vu' => ['CT_DICH_VU', 'Chi tiết sử dụng dịch vụ'],
         'hoa-don' => ['HOA_DON', 'Quản lý hóa đơn'],
-        'khach-hang' => ['KHACH_HANG', 'Quản lý khách hàng'],
-        'nhan-vien' => ['NHAN_VIEN', 'Quản lý nhân viên'],
         'phan-cong' => ['PHAN_CONG', 'Quản lý phân công công việc'],
-        'chuc-vu' => ['CHUC_VU', 'Quản lý chức vụ & Phân quyền'],
         'danh-gia' => ['DANH_GIA', 'Quản lý đánh giá khách hàng'],
         'thong-ke' => ['THONG_KE', 'Báo cáo thống kê'],
     ];
+    Route::view('dat-phong/{dat_phong}', 'admin.dang-xay-dung', ['tenChucNang' => 'Chi tiết đơn đặt phòng'])
+        ->name('dat-phong.show')->middleware('quyen:DAT_PHONG');
     foreach ($moduleChuaLam as $uri => [$maQuyen, $tenChucNang]) {
         Route::view($uri, 'admin.dang-xay-dung', ['tenChucNang' => $tenChucNang])
             ->name("$uri.index")
