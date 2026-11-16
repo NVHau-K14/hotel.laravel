@@ -99,6 +99,7 @@ php artisan test
   6. đặt trùng ngày → bị chặn.
 - `tests/Feature/PhanQuyenTest.php` — `vung` vào `/admin/phong` bị **403**, menu theo quyền, chuyển hướng khi chưa đăng nhập.
 - `tests/Feature/DatPhongKhachTest.php` — kiểm tra dữ liệu và quy tắc khi khách đặt phòng, khách vãng lai.
+- `tests/Feature/KiemTraBoSungTest.php` — thanh toán khi đơn chưa nhận phòng, thanh toán lặp, hóa đơn giữ giá cũ khi đổi giá dịch vụ, không thêm dịch vụ sau thanh toán, điều kiện đánh giá, xóa mềm loại phòng, doanh thu chỉ tính hóa đơn đã thanh toán.
 - `tests/Unit/HelperTest.php` — định dạng tiền, ngày.
 
 ## 6. Cấu trúc thư mục chính
