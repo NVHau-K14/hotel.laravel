@@ -34,7 +34,7 @@
             <div class="mb-3">
                 <label class="form-label fw-semibold">Loại công việc <span class="text-danger">*</span></label>
                 <input type="text" name="loaiCongViec" class="form-control"
-                       placeholder="Ví dụ: Dọn phòng 101, Trực sảnh ca tối, Bảo trì máy giặt..."
+                       placeholder="Ví dụ: Dọn phòng 101, Trực sảnh ca tối, Bảo trì máy giặt…"
                        value="{{ old('loaiCongViec', $item?->LoaiCongViec) }}" required autofocus>
             </div>
 

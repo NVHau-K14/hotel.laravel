@@ -3,93 +3,68 @@
 @section('title', 'Danh sách phòng nghỉ')
 
 @section('content')
-<main class="container my-4">
-    <div class="mb-4 text-center">
-        <h1 class="fw-bold">Danh sách phòng nghỉ</h1>
-        <p class="text-muted">Chọn phòng phù hợp nhất cho chuyến đi của bạn</p>
-    </div>
+<main class="wrap pb-5">
+    <header class="page-intro">
+        <h1>Phòng nghỉ</h1>
+        <p>Chọn ngày nhận và trả phòng để chỉ xem những phòng còn trống trong khoảng thời gian đó.</p>
+    </header>
 
-    <!-- FILTER BAR -->
-    <div class="card p-4 border-0 shadow-sm mb-4" style="border-radius: 12px;">
-        <form method="GET" action="{{ route('phong.index') }}" class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label small fw-semibold">Loại phòng</label>
-                <select name="maLoaiPhong" class="form-select form-select-sm">
+    <div class="filter-bar">
+        <form method="GET" action="{{ route('phong.index') }}">
+            <div>
+                <label class="form-label" for="loc-loai-phong">Loại phòng</label>
+                <select id="loc-loai-phong" name="maLoaiPhong" class="form-select">
                     <option value="">Tất cả loại phòng</option>
                     @foreach ($loaiPhongs as $lp)
-                        <option value="{{ $lp->MaLoaiPhong }}" @selected($maLoaiPhong == $lp->MaLoaiPhong)>
-                            {{ $lp->TenLoaiPhong }}
-                        </option>
+                        <option value="{{ $lp->MaLoaiPhong }}" @selected($maLoaiPhong == $lp->MaLoaiPhong)>{{ $lp->TenLoaiPhong }}</option>
                     @endforeach
                 </select>
             </div>
-
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Khoảng giá / đêm</label>
-                <select name="khoangGia" class="form-select form-select-sm">
-                    <option value="">Tất cả mức giá</option>
+            <div>
+                <label class="form-label" for="loc-khoang-gia">Giá mỗi đêm</label>
+                <select id="loc-khoang-gia" name="khoangGia" class="form-select">
+                    <option value="">Mọi mức giá</option>
                     @foreach (\App\Models\Phong::KHOANG_GIA as $ma => [$nhan])
                         <option value="{{ $ma }}" @selected($khoangGia === $ma)>{{ $nhan }}</option>
                     @endforeach
                 </select>
             </div>
-
-            <div class="col-md-2">
-                <label class="form-label small fw-semibold">Ngày nhận</label>
-                <input type="date" name="ngayNhan" class="form-control form-control-sm" value="{{ $ngayNhan }}" min="{{ today()->toDateString() }}">
+            <div>
+                <label class="form-label" for="loc-ngay-nhan">Ngày nhận</label>
+                <input id="loc-ngay-nhan" type="date" name="ngayNhan" class="form-control" value="{{ $ngayNhan }}" min="{{ today()->toDateString() }}">
             </div>
-
-            <div class="col-md-2">
-                <label class="form-label small fw-semibold">Ngày trả</label>
-                <input type="date" name="ngayTra" class="form-control form-control-sm" value="{{ $ngayTra }}" min="{{ today()->addDay()->toDateString() }}">
+            <div>
+                <label class="form-label" for="loc-ngay-tra">Ngày trả</label>
+                <input id="loc-ngay-tra" type="date" name="ngayTra" class="form-control" value="{{ $ngayTra }}" min="{{ today()->addDay()->toDateString() }}">
             </div>
-
-            <div class="col-md-1 d-flex align-items-end">
-                <button type="submit" class="btn btn-sm btn-primary w-100 py-1">Tìm</button>
-            </div>
+            <button type="submit" class="btn btn-primary">Lọc phòng</button>
         </form>
     </div>
 
     @if ($dateError)
-        <div class="alert alert-danger">{{ $dateError }}</div>
+        <div class="alert alert-danger mt-3" role="alert">{{ $dateError }}</div>
     @endif
 
-    <!-- ROOM GRID -->
-    <div class="room-card-grid">
-        @forelse ($items as $p)
-            <article class="client-card room-card">
-                <div class="room-visual image-visual">
-                    @if (! empty($p->HinhAnhDaiDien))
-                        <img src="{{ asset($p->HinhAnhDaiDien) }}" alt="Phòng {{ $p->MaPhong }}">
-                    @else
-                        <span>P.{{ $p->MaPhong }}</span>
-                    @endif
-                </div>
-                <div class="room-card-body">
-                    <h3>Phòng {{ $p->MaPhong }}</h3>
-                    <p class="text-muted">{{ $p->loaiPhong?->TenLoaiPhong }}</p>
-                    <strong class="text-primary fs-5">{{ format_currency($p->loaiPhong?->GiaPhong) }} / đêm</strong>
-                    <div class="card-actions mt-3">
-                        <a class="btn small" href="{{ route('phong.show', $p) }}">Chi tiết</a>
-                        @if ($p->nhanDatPhong())
-                            {{-- Mang theo khoảng ngày đang lọc sang trang đặt phòng --}}
-                            <a class="btn small secondary" href="{{ route('dat-phong.create', array_filter(['phong' => $p->MaPhong, 'ngayNhan' => $ngayNhan, 'ngayTra' => $ngayTra])) }}">
-                                Đặt ngay
-                            </a>
-                        @else
-                            <span class="btn small secondary disabled" style="opacity: 0.6;">Bảo trì</span>
-                        @endif
-                    </div>
-                </div>
-            </article>
-        @empty
-            <div class="text-center py-5 w-100">
-                <i class="fa-solid fa-hotel fa-3x text-muted mb-3 d-block"></i>
-                <h5>Không tìm thấy phòng nào phù hợp với yêu cầu tìm kiếm.</h5>
-                <p class="text-muted">Vui lòng thử chọn khoảng ngày khác hoặc tìm kiếm với mức giá rộng hơn.</p>
-                <a href="{{ route('phong.index') }}" class="btn btn-outline-primary">Xem tất cả phòng</a>
-            </div>
-        @endforelse
-    </div>
+    <p class="result-count" role="status">
+        {{ $items->count() }} phòng
+        @if ($ngayNhan && $ngayTra)
+            còn trống từ {{ format_date($ngayNhan) }} đến {{ format_date($ngayTra) }}
+        @endif
+    </p>
+
+    @if ($items->isEmpty())
+        <div class="empty-state">
+            <h2>Không có phòng phù hợp</h2>
+            <p>Thử chọn khoảng ngày khác hoặc bỏ bớt điều kiện lọc giá và loại phòng.</p>
+            <a href="{{ route('phong.index') }}" class="btn btn-outline-primary">Xem tất cả phòng</a>
+        </div>
+    @else
+        <h2 class="visually-hidden">Kết quả</h2>
+        <div class="room-grid">
+            @foreach ($items as $p)
+                @include('client.partials.room-card', ['p' => $p, 'ngayNhan' => $ngayNhan, 'ngayTra' => $ngayTra])
+            @endforeach
+        </div>
+    @endif
 </main>
 @endsection

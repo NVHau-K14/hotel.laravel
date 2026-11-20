@@ -4,76 +4,93 @@
 
 @section('content')
 <main>
-    <section class="client-hero">
-        <div>
-            <p class="eyebrow">Trải nghiệm kỳ nghỉ tuyệt vời</p>
-            <h1>Khách sạn Nghỉ dưỡng Vip</h1>
-            <p>Chọn phòng, kiểm tra lịch trống và gửi yêu cầu đặt phòng trực tuyến tiện lợi chỉ trong vài bước.</p>
-            <div class="hero-actions">
-                <a class="btn" href="{{ route('phong.index') }}">Khám phá phòng ngay</a>
-                <a class="btn secondary" href="{{ route('dich-vu.index') }}">Xem dịch vụ</a>
+    <section class="hero">
+        <div class="wrap">
+            <div class="hero-grid">
+                <div class="hero-copy">
+                    <p class="hero-place">123 Đường Bờ Biển, Đà Nẵng</p>
+                    <h1>Nghỉ ngơi bên biển Đà Nẵng</h1>
+                    <p>Xem phòng còn trống theo ngày bạn đến, gửi yêu cầu đặt phòng trực tuyến và lễ tân sẽ gọi lại để xác nhận.</p>
+                </div>
+                <figure class="hero-media">
+                    <img src="{{ asset('Images/ChiTietPhong/Phong301/01.jpg') }}" alt="Phòng ngủ với giường đôi, vách gỗ sồi và tủ âm tường"
+                         width="1200" height="930" fetchpriority="high" decoding="async">
+                </figure>
+            </div>
+
+            {{-- Tìm phòng trống: gửi sang trang danh sách phòng với bộ lọc ngày --}}
+            <div class="booking-bar">
+                <form method="GET" action="{{ route('phong.index') }}">
+                    <div>
+                        <label class="form-label" for="tim-loai-phong">Loại phòng</label>
+                        <select id="tim-loai-phong" name="maLoaiPhong" class="form-select">
+                            <option value="">Tất cả loại phòng</option>
+                            @foreach ($loaiPhongs as $lp)
+                                <option value="{{ $lp->MaLoaiPhong }}">{{ $lp->TenLoaiPhong }} ({{ format_currency($lp->GiaPhong) }}/đêm)</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" for="tim-ngay-nhan">Ngày nhận phòng</label>
+                        <input id="tim-ngay-nhan" type="date" name="ngayNhan" class="form-control" min="{{ today()->toDateString() }}" value="{{ today()->toDateString() }}">
+                    </div>
+                    <div>
+                        <label class="form-label" for="tim-ngay-tra">Ngày trả phòng</label>
+                        <input id="tim-ngay-tra" type="date" name="ngayTra" class="form-control" min="{{ today()->addDay()->toDateString() }}" value="{{ today()->addDay()->toDateString() }}">
+                    </div>
+                    <button type="submit" class="btn btn-brass">Tìm phòng trống</button>
+                </form>
+                <p class="booking-bar-note">Đặt trực tuyến tối đa {{ \App\Models\DatPhong::SO_DEM_TOI_DA }} đêm mỗi đơn. Cần ở lâu hơn, gọi lễ tân 0909 123 456.</p>
             </div>
         </div>
     </section>
 
-    <!-- PHÒNG NỔI BẬT -->
-    <section class="client-section">
-        <div class="section-heading">
-            <h2>Phòng nổi bật</h2>
-            <a href="{{ route('phong.index') }}">Xem tất cả phòng &rarr;</a>
-        </div>
-        <div class="room-card-grid">
-            @foreach ($phongs as $p)
-                <article class="client-card room-card">
-                    <div class="room-visual image-visual">
-                        @if (! empty($p->HinhAnhDaiDien))
-                            <img src="{{ asset($p->HinhAnhDaiDien) }}" alt="Phòng {{ $p->MaPhong }}">
-                        @else
-                            <span>P.{{ $p->MaPhong }}</span>
-                        @endif
-                    </div>
-                    <div class="room-card-body">
-                        <h3>Phòng {{ $p->MaPhong }}</h3>
-                        <p class="text-muted">{{ $p->loaiPhong?->TenLoaiPhong ?? 'Bình Dân' }}</p>
-                        <strong class="text-primary fs-5">{{ format_currency($p->loaiPhong?->GiaPhong) }} / đêm</strong>
-                        <div class="card-actions mt-3">
-                            <a class="btn small" href="{{ route('phong.show', $p) }}">Chi tiết</a>
-                            @if ($p->nhanDatPhong())
-                                <a class="btn small secondary" href="{{ route('dat-phong.create', $p) }}">Đặt phòng</a>
-                            @else
-                                <span class="btn small secondary disabled" style="opacity: 0.6;">Bảo trì</span>
-                            @endif
-                        </div>
-                    </div>
-                </article>
-            @endforeach
+    <section class="section">
+        <div class="wrap">
+            <div class="section-head">
+                <div>
+                    <h2>Phòng nghỉ</h2>
+                    <p>Giá tính theo đêm, chưa gồm dịch vụ gọi thêm trong thời gian lưu trú.</p>
+                </div>
+                <a class="text-link" href="{{ route('phong.index') }}">Xem tất cả phòng</a>
+            </div>
+            <div class="room-grid">
+                @foreach ($phongs as $p)
+                    @include('client.partials.room-card', ['p' => $p])
+                @endforeach
+            </div>
         </div>
     </section>
 
-    <!-- DỊCH VỤ -->
-    <section class="client-section">
-        <div class="section-heading">
-            <h2>Dịch vụ tiện ích</h2>
-            <a href="{{ route('dich-vu.index') }}">Xem tất cả dịch vụ &rarr;</a>
-        </div>
-        <div class="service-grid service-grid-wide">
-            @foreach ($dichVus as $dv)
-                <article class="client-card service-card split-service-card">
-                    <div class="service-info">
-                        <h3>{{ $dv->TenDichVu }}</h3>
-                        <p>Dịch vụ tiêu chuẩn mang lại trải nghiệm tiện nghi nhất cho bạn.</p>
-                        <strong class="text-primary">{{ format_currency($dv->GiaDichVu) }}</strong>
-                    </div>
-                    <div class="service-visual service-photo">
-                        @if (! empty($dv->HinhAnh))
-                            <img src="{{ asset($dv->HinhAnh) }}" alt="{{ $dv->TenDichVu }}">
-                        @else
-                            <span>DV</span>
-                        @endif
-                    </div>
-                </article>
-            @endforeach
+    @if ($dichVus->isNotEmpty())
+    <section class="section pt-0">
+        <div class="wrap">
+            <div class="section-head">
+                <div>
+                    <h2>Dịch vụ trong kỳ nghỉ</h2>
+                    <p>Gọi thêm khi đang lưu trú; chi phí được cộng vào hóa đơn lúc trả phòng.</p>
+                </div>
+                <a class="text-link" href="{{ route('dich-vu.index') }}">Xem bảng giá dịch vụ</a>
+            </div>
+            <div class="service-grid">
+                @foreach ($dichVus->take(4) as $dv)
+                    <figure class="service-item">
+                        <div class="service-item-media">
+                            @if (! empty($dv->HinhAnh))
+                                <img src="{{ asset($dv->HinhAnh) }}" alt="" loading="lazy" decoding="async" width="500" height="400">
+                            @else
+                                <span class="placeholder-plate"><i class="fa-solid fa-bell-concierge" aria-hidden="true"></i></span>
+                            @endif
+                        </div>
+                        <figcaption>
+                            <h3>{{ $dv->TenDichVu }}</h3>
+                            <span class="price">{{ format_currency($dv->GiaDichVu) }}</span>
+                        </figcaption>
+                    </figure>
+                @endforeach
+            </div>
         </div>
     </section>
+    @endif
 </main>
 @endsection

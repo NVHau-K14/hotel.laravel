@@ -24,7 +24,7 @@
             @endif
             <div class="mb-3">
                 <label class="form-label fw-semibold">Tên loại phòng <span class="text-danger">*</span></label>
-                <input type="text" name="tenLoaiPhong" class="form-control" placeholder="Ví dụ: Bình Dân, Vip, Thương Gia..."
+                <input type="text" name="tenLoaiPhong" class="form-control" placeholder="Ví dụ: Bình Dân, Vip, Thương Gia…"
                        value="{{ old('tenLoaiPhong', $item?->TenLoaiPhong) }}" required autofocus>
             </div>
 
@@ -36,7 +36,7 @@
 
             <div class="mb-3">
                 <label class="form-label fw-semibold">Mô tả tiện ích, trang thiết bị</label>
-                <textarea name="moTa" class="form-control" rows="4" placeholder="Một giường đôi. Máy lạnh. View ngắm biển...">{{ old('moTa', $item?->MoTa) }}</textarea>
+                <textarea name="moTa" class="form-control" rows="4" placeholder="Một giường đôi. Máy lạnh. View ngắm biển…">{{ old('moTa', $item?->MoTa) }}</textarea>
             </div>
 
             <div class="d-flex gap-2 mt-4">

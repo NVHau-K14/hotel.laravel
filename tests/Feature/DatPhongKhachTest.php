@@ -158,4 +158,23 @@ class DatPhongKhachTest extends TestCase
         $this->get(route('phong.index', ['ngayNhan' => today()->subDays(3)->toDateString(), 'ngayTra' => today()->subDay()->toDateString()]))
             ->assertOk()->assertSee('Ngày nhận phòng không được nằm trong quá khứ.');
     }
+
+    public function test_chi_tiet_phong_hien_bo_anh_trong_thu_muc_rieng_cua_phong(): void
+    {
+        $phong = Phong::findOrFail(101);
+        $phong->update(['HinhAnhDaiDien' => '/Images/ChiTietPhong/Phong101/01.jpg']);
+
+        $this->get(route('phong.show', $phong))
+            ->assertOk()
+            ->assertSee('Images/ChiTietPhong/Phong101/02.jpg', false)
+            ->assertDontSee('Images/ChiTietPhong/Phong102/', false);
+
+        // Ảnh tải lên nằm chung thư mục uploads: chỉ hiện đúng ảnh đại diện, không kéo ảnh phòng khác
+        $phong->update(['HinhAnhDaiDien' => '/uploads/phong/anh-101.jpg']);
+
+        $this->get(route('phong.show', $phong))
+            ->assertOk()
+            ->assertSee('uploads/phong/anh-101.jpg', false)
+            ->assertDontSee('class="gallery-thumb"', false);
+    }
 }

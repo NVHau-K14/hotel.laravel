@@ -3,79 +3,119 @@
 @section('title', "Đặt phòng {$room->MaPhong}")
 
 @section('content')
-<main class="container my-4" style="max-width: 800px;">
-    <div class="mb-3">
-        <a href="{{ route('phong.show', $room) }}" class="text-decoration-none text-muted">
-            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại chi tiết phòng
-        </a>
-    </div>
+<main class="wrap">
+    <a href="{{ route('phong.show', $room) }}" class="back-link mt-3 mb-2">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Chi tiết phòng {{ $room->MaPhong }}
+    </a>
 
-    <div class="card border-0 shadow-sm p-4 p-md-5" style="border-radius: 12px;">
-        <h2 class="fw-bold mb-1 text-center">Yêu cầu đặt phòng</h2>
-        <p class="text-muted text-center mb-4">Chọn ngày lưu trú, khách sạn sẽ liên hệ theo thông tin tài khoản để xác nhận</p>
+    <div class="booking-layout">
+        <div class="sheet">
+            <h1 class="sheet-title">Yêu cầu đặt phòng</h1>
+            <p class="sheet-sub">Chọn ngày lưu trú. Khách sạn liên hệ theo thông tin tài khoản để xác nhận.</p>
 
-        @if ($errors->any())
-            <div class="alert alert-danger mb-4">{{ $errors->first() }}</div>
-        @endif
+            @if ($errors->any())
+                <div class="alert alert-danger mb-4">{{ $errors->first() }}</div>
+            @endif
 
-        <!-- TÓM TẮT PHÒNG -->
-        <div class="card bg-light border-0 p-3 mb-4">
-            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                <div>
-                    <h5 class="fw-bold mb-1">Phòng số {{ $room->MaPhong }} - {{ $room->loaiPhong?->TenLoaiPhong }}</h5>
-                    <span class="text-muted">Đơn giá: <strong>{{ format_currency($room->loaiPhong?->GiaPhong) }}</strong> / đêm</span>
+            @if (! $room->nhanDatPhong())
+                <div class="alert alert-warning mb-0">
+                    Phòng này đang bảo trì hoặc tạm ngừng nhận khách. Vui lòng
+                    <a href="{{ route('phong.index') }}">chọn phòng khác</a>.
                 </div>
-                <span class="badge bg-primary fs-6">Phòng {{ $room->MaPhong }}</span>
-            </div>
+            @else
+            <form method="POST" action="{{ route('dat-phong.store', $room) }}" id="form-dat-phong">
+                @csrf
+
+                <h2 class="step-title"><span aria-hidden="true">1</span>Thời gian lưu trú</h2>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="ngay-nhan">Ngày nhận phòng <span class="field-required" aria-hidden="true">*</span></label>
+                        <input type="date" id="ngay-nhan" name="ngayNhan" class="form-control" value="{{ old('ngayNhan', $ngayNhan) }}"
+                               min="{{ today()->toDateString() }}" max="{{ today()->addDays(\App\Models\DatPhong::SO_NGAY_DAT_TRUOC_TOI_DA)->toDateString() }}" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label" for="ngay-tra">Ngày trả phòng <span class="field-required" aria-hidden="true">*</span></label>
+                        <input type="date" id="ngay-tra" name="ngayTra" class="form-control" value="{{ old('ngayTra', $ngayTra) }}"
+                               min="{{ today()->addDay()->toDateString() }}" required>
+                    </div>
+                </div>
+                <p class="form-text mt-2 mb-4">
+                    Đặt trực tuyến tối đa {{ \App\Models\DatPhong::SO_DEM_TOI_DA }} đêm mỗi đơn và
+                    {{ \App\Models\DatPhong::SO_DON_CHO_DUYET_TOI_DA }} đơn đang chờ duyệt cùng lúc.
+                </p>
+
+                {{-- Thông tin liên hệ lấy từ tài khoản, không sửa ở đây (sửa ở trang hồ sơ) --}}
+                <h2 class="step-title"><span aria-hidden="true">2</span>Thông tin khách đặt</h2>
+                <dl class="guest-info">
+                    <div><dt>Họ và tên</dt><dd>{{ $clientUser->HoTen }}</dd></div>
+                    <div><dt>Số điện thoại</dt><dd>{{ $clientUser->DienThoai }}</dd></div>
+                    <div><dt>Email</dt><dd>{{ $clientUser->Email ?: 'Chưa cập nhật' }}</dd></div>
+                    <div><dt>CMND/CCCD</dt><dd>{{ $clientUser->CMND ?: 'Chưa cập nhật' }}</dd></div>
+                </dl>
+                <p class="form-text mt-2 mb-4">
+                    Thông tin chưa đúng? <a href="{{ route('tai-khoan.sua') }}">Cập nhật hồ sơ</a> trước khi đặt.
+                </p>
+
+                <button type="submit" class="btn btn-primary booking-submit">
+                    <span>Xác nhận gửi yêu cầu đặt phòng</span>
+                </button>
+            </form>
+            @endif
         </div>
 
-        @if (! $room->nhanDatPhong())
-            <div class="alert alert-warning mb-0">
-                Phòng này đang bảo trì hoặc tạm ngừng nhận khách. Vui lòng
-                <a href="{{ route('phong.index') }}">chọn phòng khác</a>.
+        <aside class="summary-card" aria-label="Tóm tắt phòng">
+            <div class="summary-card-media">
+                @if (! empty($room->HinhAnhDaiDien))
+                    <img src="{{ asset($room->HinhAnhDaiDien) }}" alt="" width="640" height="400">
+                @endif
+                <span class="door-plate door-plate-on-image" aria-hidden="true">{{ $room->MaPhong }}</span>
             </div>
-        @else
-        <form method="POST" action="{{ route('dat-phong.store', $room) }}">
-            @csrf
-
-            <h5 class="fw-bold text-primary mb-3">1. Thời gian lưu trú</h5>
-            <div class="row g-3 mb-2">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Ngày nhận phòng <span class="text-danger">*</span></label>
-                    <input type="date" name="ngayNhan" class="form-control" value="{{ old('ngayNhan', $ngayNhan) }}"
-                           min="{{ today()->toDateString() }}" max="{{ today()->addDays(\App\Models\DatPhong::SO_NGAY_DAT_TRUOC_TOI_DA)->toDateString() }}" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Ngày trả phòng <span class="text-danger">*</span></label>
-                    <input type="date" name="ngayTra" class="form-control" value="{{ old('ngayTra', $ngayTra) }}"
-                           min="{{ today()->addDay()->toDateString() }}" required>
-                </div>
+            <div class="summary-card-body">
+                <h2>Phòng {{ $room->MaPhong }}</h2>
+                <div class="text-muted">{{ $room->loaiPhong?->TenLoaiPhong }}</div>
+                <dl class="summary-list">
+                    <div><dt>Giá mỗi đêm</dt><dd>{{ format_currency($room->loaiPhong?->GiaPhong) }}</dd></div>
+                    <div><dt>Số đêm</dt><dd data-so-dem>—</dd></div>
+                    <div class="is-total"><dt>Tạm tính tiền phòng</dt><dd data-tam-tinh>—</dd></div>
+                </dl>
+                <p class="small text-muted mt-3 mb-0">Dịch vụ gọi thêm được cộng vào hóa đơn khi trả phòng.</p>
             </div>
-            <p class="small text-muted mb-4">
-                Đặt trực tuyến tối đa {{ \App\Models\DatPhong::SO_DEM_TOI_DA }} đêm mỗi đơn và
-                {{ \App\Models\DatPhong::SO_DON_CHO_DUYET_TOI_DA }} đơn đang chờ duyệt cùng lúc.
-            </p>
-
-            {{-- Thông tin liên hệ lấy từ tài khoản, không sửa ở đây (sửa ở trang hồ sơ) --}}
-            <h5 class="fw-bold text-primary mb-3">2. Thông tin khách đặt</h5>
-            <div class="card border p-3 mb-4">
-                <div class="row g-2 small">
-                    <div class="col-sm-6"><span class="text-muted">Họ và tên:</span> <strong>{{ $clientUser->HoTen }}</strong></div>
-                    <div class="col-sm-6"><span class="text-muted">Số điện thoại:</span> <strong>{{ $clientUser->DienThoai }}</strong></div>
-                    <div class="col-sm-6"><span class="text-muted">Email:</span> <strong>{{ $clientUser->Email ?: 'Chưa cập nhật' }}</strong></div>
-                    <div class="col-sm-6"><span class="text-muted">CMND/CCCD:</span> <strong>{{ $clientUser->CMND ?: 'Chưa cập nhật' }}</strong></div>
-                </div>
-                <div class="mt-2 small">
-                    Thông tin chưa đúng? <a href="{{ route('tai-khoan.sua') }}">Cập nhật hồ sơ</a> trước khi đặt.
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary booking-submit w-100 py-3 fs-5 fw-bold shadow-sm">
-                <i class="fa-solid fa-check-circle" aria-hidden="true"></i>
-                <span>Xác nhận gửi yêu cầu đặt phòng</span>
-            </button>
-        </form>
-        @endif
+        </aside>
     </div>
 </main>
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        var gia = {{ (int) ($room->loaiPhong?->GiaPhong ?? 0) }};
+        var nhan = document.getElementById('ngay-nhan');
+        var tra = document.getElementById('ngay-tra');
+        var oDem = document.querySelector('[data-so-dem]');
+        var oTien = document.querySelector('[data-tam-tinh]');
+        if (!nhan || !tra || !oDem) return;
+        var dinhDang = new Intl.NumberFormat('vi-VN');
+        function capNhat() {
+            var a = new Date(nhan.value), b = new Date(tra.value);
+            var dem = Math.round((b - a) / 86400000);
+            if (!nhan.value || !tra.value || isNaN(dem) || dem < 1) {
+                oDem.textContent = '—';
+                oTien.textContent = '—';
+                return;
+            }
+            oDem.textContent = dem + ' đêm';
+            oTien.textContent = dinhDang.format(dem * gia) + ' đ';
+        }
+        nhan.addEventListener('change', function () {
+            if (nhan.value) {
+                var hom = new Date(nhan.value);
+                hom.setDate(hom.getDate() + 1);
+                tra.min = hom.toISOString().slice(0, 10);
+            }
+            capNhat();
+        });
+        tra.addEventListener('change', capNhat);
+        capNhat();
+    })();
+</script>
+@endpush

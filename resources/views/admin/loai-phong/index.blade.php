@@ -12,6 +12,7 @@
     </div>
 
     <div class="card admin-panel border-0 shadow-sm p-4">
+        <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>
                 <tr>
@@ -49,12 +50,14 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 
     @if ($daXoa->isNotEmpty())
         <div class="card admin-card border-0 shadow-sm p-4 mt-4">
             <h5 class="fw-bold mb-1">Loại phòng đã ngừng sử dụng</h5>
             <p class="text-muted small mb-3">Các phòng thuộc những loại này không hiện ở trang khách và không nhận đặt mới.</p>
+            <div class="table-responsive">
             <table class="table admin-table align-middle mb-0">
                 <tbody>
                     @foreach ($daXoa as $item)
@@ -74,6 +77,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
     @endif
 </div>

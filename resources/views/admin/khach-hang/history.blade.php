@@ -15,6 +15,7 @@
     </div>
 
     <div class="card admin-panel border-0 shadow-sm p-4">
+        <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>
                 <tr>
@@ -48,6 +49,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 @endsection

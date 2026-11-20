@@ -8,6 +8,7 @@ use App\Models\Phong;
 use App\Services\DatPhongService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\View\View;
 
 /**
@@ -61,6 +62,36 @@ class RoomController extends Controller
             return redirect()->route('phong.index')->thongBao('danger', 'Không tìm thấy thông tin phòng.');
         }
 
-        return view('client.room-detail', ['room' => $phong->load('loaiPhong')]);
+        return view('client.room-detail', [
+            'room' => $phong->load('loaiPhong'),
+            'gallery' => $this->anhCuaPhong($phong),
+        ]);
+    }
+
+    /**
+     * Ảnh đại diện trước, sau đó các ảnh cùng thư mục Images/ChiTietPhong/PhongXXX (tối đa 8 ảnh).
+     * Ảnh tải lên (uploads/...) nằm chung thư mục giữa các phòng nên chỉ lấy đúng ảnh đại diện.
+     *
+     * @return list<string>
+     */
+    private function anhCuaPhong(Phong $phong): array
+    {
+        $anhDaiDien = $phong->HinhAnhDaiDien;
+        if (empty($anhDaiDien)) {
+            return [];
+        }
+
+        $thuMuc = dirname(ltrim($anhDaiDien, '/'));
+        if (! str_starts_with($thuMuc, 'Images/ChiTietPhong/') || str_contains($thuMuc, '..') || ! File::isDirectory(public_path($thuMuc))) {
+            return [$anhDaiDien];
+        }
+
+        $anhKhac = collect(File::files(public_path($thuMuc)))
+            ->filter(fn ($file) => in_array(strtolower($file->getExtension()), ['jpg', 'jpeg', 'png', 'webp'], true))
+            ->map(fn ($file) => '/'.$thuMuc.'/'.$file->getFilename())
+            ->sort()
+            ->reject(fn (string $duongDan) => $duongDan === '/'.ltrim($anhDaiDien, '/'));
+
+        return collect([$anhDaiDien])->merge($anhKhac)->take(8)->values()->all();
     }
 }

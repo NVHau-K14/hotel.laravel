@@ -12,6 +12,7 @@
     </div>
 
     <div class="card admin-panel border-0 shadow-sm p-4">
+        <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>
                 <tr>
@@ -28,7 +29,7 @@
                         <td><span class="id-badge">{{ $item->MaDichVu }}</span></td>
                         <td>
                             @if (! empty($item->HinhAnh))
-                                <img src="{{ asset($item->HinhAnh) }}" alt="Dich vu" style="width: 60px; height: 45px; object-fit: cover; border-radius: 6px;">
+                                <img src="{{ asset($item->HinhAnh) }}" alt="" width="64" height="46" style="width: 60px; height: 45px; object-fit: cover; border-radius: 6px;">
                             @else
                                 <span class="text-muted small">Không có ảnh</span>
                             @endif
@@ -55,6 +56,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 @endsection

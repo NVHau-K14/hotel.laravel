@@ -57,7 +57,7 @@
 
             <div class="mb-3">
                 <label class="form-label fw-semibold">Nội dung nhận xét <span class="text-danger">*</span></label>
-                <textarea name="noiDung" rows="4" class="form-control" placeholder="Nhập cảm nhận, nhận xét về phòng..." required>{{ old('noiDung', $item?->NoiDung) }}</textarea>
+                <textarea name="noiDung" rows="4" class="form-control" placeholder="Nhập cảm nhận, nhận xét về phòng…" required>{{ old('noiDung', $item?->NoiDung) }}</textarea>
             </div>
 
             <div class="d-flex gap-2 mt-4">

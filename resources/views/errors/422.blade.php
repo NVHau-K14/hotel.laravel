@@ -4,5 +4,5 @@
 @section('content')
     <h1>Không thể hoàn tất thao tác</h1>
     <p>{{ $thongBao ?? 'Không thể hoàn tất thao tác. Vui lòng thử lại hoặc liên hệ quản trị viên.' }}</p>
-    <button onclick="history.back()">Quay lại</button>
+    <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Quay lại trang trước</button>
 @endsection

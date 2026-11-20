@@ -24,7 +24,7 @@
             @endif
             <div class="mb-3">
                 <label class="form-label fw-semibold">Mã phòng <span class="text-danger">*</span></label>
-                <input type="number" name="maPhong" class="form-control" placeholder="Ví dụ: 101, 102..."
+                <input type="number" name="maPhong" class="form-control" placeholder="Ví dụ: 101, 102…"
                        value="{{ old('maPhong', $item?->MaPhong) }}" {{ $item ? 'readonly' : 'required' }}>
                 @if ($item)
                     <small class="text-muted">Mã số phòng không thể thay đổi sau khi tạo.</small>
@@ -65,7 +65,7 @@
                 @if (! empty($item?->HinhAnhDaiDien))
                     <div class="mt-2">
                         <small class="text-muted d-block mb-1">Ảnh hiện tại:</small>
-                        <img src="{{ asset($item->HinhAnhDaiDien) }}" alt="Preview" style="max-height: 100px; border-radius: 6px;">
+                        <img src="{{ asset($item->HinhAnhDaiDien) }}" alt="Ảnh hiện tại" width="133" height="100" style="max-height: 100px; width: auto; border-radius: 6px;">
                     </div>
                 @endif
             </div>

@@ -10,7 +10,7 @@
 
     <div class="card admin-panel border-0 shadow-sm p-4">
         <form method="GET" action="{{ route('admin.khach-hang.index') }}" class="d-flex gap-2 mb-3" style="max-width: 400px;">
-            <input type="text" name="keyword" class="form-control form-control-sm" placeholder="Tìm theo tên, email, SĐT, CCCD..." value="{{ $keyword }}">
+            <input type="text" name="keyword" class="form-control form-control-sm" placeholder="Tìm theo tên, email, SĐT, CCCD…" value="{{ $keyword }}">
             <button type="submit" class="btn btn-sm btn-primary">Tìm</button>
             @if (! empty($keyword))
                 <a href="{{ route('admin.khach-hang.index') }}" class="btn btn-sm btn-outline-secondary">Xóa</a>

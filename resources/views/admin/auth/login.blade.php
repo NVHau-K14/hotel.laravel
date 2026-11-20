@@ -3,49 +3,58 @@
 @section('title', 'Đăng nhập Quản trị')
 
 @section('content')
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card p-4 shadow-sm" style="width: 100%; max-width: 420px; border-radius: 12px;">
-        <div class="text-center mb-4">
-            <i class="fa-solid fa-hotel text-primary fa-3x mb-2"></i>
-            <h2 class="fw-bold">QUẢN TRỊ KHÁCH SẠN</h2>
-            <p class="text-muted">Đăng nhập tài khoản nhân viên</p>
+<div class="admin-login">
+    <section class="admin-login-art" aria-hidden="true">
+        <div class="d-flex align-items-center gap-3">
+            <span class="brand-mark">V</span>
+            <span class="brand-name">
+                <strong style="color:#f3ece0">Khách sạn Vip</strong>
+                <span>Bàn làm việc nhân viên</span>
+            </span>
         </div>
-
-        @if ($errors->any())
-            <div class="alert alert-danger py-2">{{ $errors->first() }}</div>
-        @endif
-
-        <form method="POST" action="{{ route('admin.dang-nhap.store') }}">
-            @csrf
-            <div class="mb-3">
-                <label for="admin-username" class="form-label fw-semibold">Tên đăng nhập</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                    <input type="text" id="admin-username" name="username" class="form-control" placeholder="Tên đăng nhập" autocomplete="username" required autofocus value="{{ old('username') }}">
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label for="admin-password" class="form-label fw-semibold">Mật khẩu</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-                    <input type="password" id="admin-password" name="password" class="form-control" placeholder="Mật khẩu" autocomplete="current-password" required>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
-                <i class="fa-solid fa-right-to-bracket me-2"></i>Đăng nhập
-            </button>
-        </form>
-
-        <div class="mt-4 pt-3 border-top text-center text-muted small">
-            <span>Tài khoản mẫu: <strong>viet</strong> / <strong>1</strong> (Quản lý) | <strong>binh</strong> / <strong>1</strong> (Lễ tân)</span>
-            <div class="mt-2">
-                <a href="{{ route('trang-chu') }}" class="text-decoration-none">
-                    <i class="fa-solid fa-arrow-left me-1"></i>Về trang dành cho khách hàng
-                </a>
-            </div>
+        <div>
+            <h1>Mỗi ca trực bắt đầu từ đây.</h1>
+            <p>Duyệt đơn, nhận và trả phòng, ghi dịch vụ, lập hóa đơn cho khách trong cùng một nơi.</p>
         </div>
-    </div>
+        <span class="small" style="color:#b9c2bd">123 Đường Bờ Biển, Đà Nẵng</span>
+    </section>
+
+    <section class="admin-login-form">
+        <div>
+            <h2>Đăng nhập</h2>
+            <p class="text-muted mb-4">Dùng tài khoản nhân viên do quản lý cấp.</p>
+
+            @if ($errors->any())
+                <div class="alert alert-danger py-2" role="alert">{{ $errors->first() }}</div>
+            @endif
+
+            <form method="POST" action="{{ route('admin.dang-nhap.store') }}">
+                @csrf
+                <div class="mb-3">
+                    <label for="admin-username" class="form-label">Tên đăng nhập</label>
+                    <input type="text" id="admin-username" name="username" class="form-control" autocomplete="username" spellcheck="false" required autofocus value="{{ old('username') }}">
+                </div>
+
+                <div class="mb-4">
+                    <label for="admin-password" class="form-label">Mật khẩu</label>
+                    <input type="password" id="admin-password" name="password" class="form-control" autocomplete="current-password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100">Đăng nhập</button>
+            </form>
+
+            <div class="demo-accounts">
+                Tài khoản mẫu cho môi trường thử nghiệm:
+                <dl>
+                    <dt>viet</dt><dd>Admin@1234 (Quản lý)</dd>
+                    <dt>binh</dt><dd>Nhanvien@1234 (Lễ tân)</dd>
+                </dl>
+            </div>
+
+            <a href="{{ route('trang-chu') }}" class="back-link mt-3">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Về trang dành cho khách
+            </a>
+        </div>
+    </section>
 </div>
 @endsection

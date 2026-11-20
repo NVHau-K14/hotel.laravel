@@ -48,7 +48,7 @@
             @if (! empty($trangThai))
                 <input type="hidden" name="trangThai" value="{{ $trangThai }}">
             @endif
-            <input type="text" name="keyword" class="form-control form-control-sm" placeholder="Tìm theo tên khách, sđt, phòng..." value="{{ $keyword }}">
+            <input type="text" name="keyword" class="form-control form-control-sm" placeholder="Tìm theo tên khách, sđt, phòng…" value="{{ $keyword }}">
             <button type="submit" class="btn btn-sm btn-primary">Tìm</button>
             @if (! empty($keyword))
                 <a href="{{ route('admin.dat-phong.index', array_filter(['trangThai' => $trangThai])) }}" class="btn btn-sm btn-outline-secondary">Xóa lọc</a>
@@ -77,22 +77,21 @@
                             <td class="fw-semibold">{{ $item->khachHang?->HoTen ?? 'Khách vãng lai' }}</td>
                             <td>{{ $item->khachHang?->DienThoai ?? '' }}</td>
                             <td>
-                                <strong>Phòng {{ $item->MaPhong }}</strong>
-                                <div class="small text-muted">{{ $item->phong?->loaiPhong?->TenLoaiPhong ?? '' }}</div>
-                            </td>
-                            <td>
-                                <div class="small">
-                                    <i class="fa-regular fa-calendar-check me-1 text-success"></i>{{ format_date($item->NgayNhan) }}
-                                    <br>
-                                    <i class="fa-regular fa-calendar-xmark me-1 text-danger"></i>{{ format_date($item->NgayTra) }}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="door-plate" aria-hidden="true">{{ $item->MaPhong }}</span>
+                                    <div>
+                                        <span class="visually-hidden">Phòng {{ $item->MaPhong }}</span>
+                                        <div class="small text-muted">{{ $item->phong?->loaiPhong?->TenLoaiPhong ?? '' }}</div>
+                                    </div>
                                 </div>
                             </td>
+                            <td class="text-nowrap">{{ format_date($item->NgayNhan) }} – {{ format_date($item->NgayTra) }}</td>
                             <td>
                                 <span class="{{ $label }}">{{ $text }}</span>
                             </td>
                             <td class="text-end">
                                 <a href="{{ route('admin.dat-phong.show', $item) }}" class="btn btn-sm btn-outline-primary">
-                                    Chi tiết & Xử lý
+                                    Xử lý đơn
                                 </a>
                             </td>
                         </tr>

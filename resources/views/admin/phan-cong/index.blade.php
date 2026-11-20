@@ -19,7 +19,7 @@
     <div class="card admin-panel border-0 shadow-sm p-3 mb-4">
         <form method="GET" action="{{ route('admin.phan-cong.index') }}" class="row g-2 align-items-center">
             <div class="col-md-4">
-                <input type="text" name="keyword" class="form-control" placeholder="Tìm theo loại công việc..." value="{{ $keyword }}">
+                <input type="text" name="keyword" class="form-control" placeholder="Tìm theo loại công việc…" value="{{ $keyword }}">
             </div>
             <div class="col-md-3">
                 <input type="date" name="ngay" class="form-control" value="{{ $ngay }}">
@@ -39,6 +39,7 @@
     </div>
 
     <div class="card admin-panel border-0 shadow-sm p-4">
+        <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>
                 <tr>
@@ -91,6 +92,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 @endsection

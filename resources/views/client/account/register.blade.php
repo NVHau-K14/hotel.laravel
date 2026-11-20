@@ -3,69 +3,71 @@
 @section('title', 'Đăng ký tài khoản khách hàng')
 
 @section('content')
-<main class="container my-5 d-flex justify-content-center">
-    <div class="card border-0 shadow-sm p-4 p-md-5" style="width: 100%; max-width: 500px; border-radius: 12px;">
-        <div class="text-center mb-4">
-            <h2 class="fw-bold">ĐĂNG KÝ TÀI KHOẢN</h2>
-            <p class="text-muted">Tạo tài khoản để theo dõi lịch sử đặt phòng</p>
-        </div>
+<main class="auth-split">
+    <div class="auth-art" aria-hidden="true">
+        <img src="{{ asset('Images/ChiTietPhong/Phong201/02.jpg') }}" alt="" width="1200" height="800" decoding="async">
+        <blockquote>Một tài khoản để đặt phòng, xem lịch sử lưu trú và gửi đánh giá.</blockquote>
+    </div>
 
-        @if ($errors->any())
-            <div class="alert alert-danger py-2 mb-3">{{ $errors->first() }}</div>
-        @endif
+    <div class="auth-form">
+        <div>
+            <h1>Tạo tài khoản</h1>
+            <p class="lead-text">Mất khoảng một phút. Các mục có dấu * là bắt buộc.</p>
 
-        <form method="POST" action="{{ route('tai-khoan.dang-ky.store') }}">
-            @csrf
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
-                <input type="text" name="hoTen" class="form-control" placeholder="Nguyễn Văn A" required value="{{ old('hoTen') }}">
-            </div>
+            @if ($errors->any())
+                <div class="alert alert-danger py-2 mb-3" role="alert">{{ $errors->first() }}</div>
+            @endif
 
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Số điện thoại di động <span class="text-danger">*</span></label>
-                <input type="tel" name="dienThoai" class="form-control" placeholder="0901234567" required
-                       inputmode="numeric" maxlength="15" autocomplete="tel" value="{{ old('dienThoai') }}">
-                <div class="form-text">Đã từng đặt phòng tại khách sạn? Dùng đúng số điện thoại cũ để nhận lại lịch sử đặt phòng.</div>
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
-                    <input type="password" name="password" class="form-control" placeholder="Mật khẩu" required
-                           minlength="8" maxlength="72" autocomplete="new-password">
+            <form method="POST" action="{{ route('tai-khoan.dang-ky.store') }}">
+                @csrf
+                <div class="mb-3">
+                    <label class="form-label" for="dk-ho-ten">Họ và tên <span class="field-required" aria-hidden="true">*</span></label>
+                    <input type="text" id="dk-ho-ten" name="hoTen" class="form-control" autocomplete="name" placeholder="Nguyễn Văn A" required value="{{ old('hoTen') }}">
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Nhập lại mật khẩu <span class="text-danger">*</span></label>
-                    <input type="password" name="password_confirmation" class="form-control" placeholder="Nhập lại mật khẩu" required
-                           minlength="8" maxlength="72" autocomplete="new-password">
+
+                <div class="mb-3">
+                    <label class="form-label" for="dk-dien-thoai">Số điện thoại di động <span class="field-required" aria-hidden="true">*</span></label>
+                    <input type="tel" id="dk-dien-thoai" name="dienThoai" class="form-control" placeholder="0901234567" required
+                           inputmode="numeric" maxlength="15" autocomplete="tel" value="{{ old('dienThoai') }}" aria-describedby="dk-dien-thoai-goi-y">
+                    <div class="form-text" id="dk-dien-thoai-goi-y">Đã từng đặt phòng tại khách sạn? Dùng đúng số điện thoại cũ để nhận lại lịch sử đặt phòng.</div>
                 </div>
-                <div class="col-12 form-text mt-1">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường và chữ số; không chứa số điện thoại hoặc email.</div>
-            </div>
 
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Email</label>
-                <input type="email" name="email" class="form-control" placeholder="email@example.com" value="{{ old('email') }}">
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">CMND / CCCD</label>
-                    <input type="text" name="cmnd" class="form-control" placeholder="9 hoặc 12 chữ số" inputmode="numeric" maxlength="12" value="{{ old('cmnd') }}">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="dk-mat-khau">Mật khẩu <span class="field-required" aria-hidden="true">*</span></label>
+                        <input type="password" id="dk-mat-khau" name="password" class="form-control" required
+                               minlength="8" maxlength="72" autocomplete="new-password" aria-describedby="dk-mat-khau-goi-y">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label" for="dk-nhap-lai">Nhập lại mật khẩu <span class="field-required" aria-hidden="true">*</span></label>
+                        <input type="password" id="dk-nhap-lai" name="password_confirmation" class="form-control" required
+                               minlength="8" maxlength="72" autocomplete="new-password">
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Địa chỉ</label>
-                    <input type="text" name="diaChi" class="form-control" placeholder="Tỉnh / Thành phố" value="{{ old('diaChi') }}">
+                <div class="form-text mt-1 mb-3" id="dk-mat-khau-goi-y">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường và chữ số; không chứa số điện thoại hoặc email.</div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="dk-email">Email</label>
+                    <input type="email" id="dk-email" name="email" class="form-control" autocomplete="email" spellcheck="false" placeholder="email@example.com" value="{{ old('email') }}">
                 </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="dk-cmnd">CMND / CCCD</label>
+                        <input type="text" id="dk-cmnd" name="cmnd" class="form-control" placeholder="9 hoặc 12 chữ số" inputmode="numeric" maxlength="12" autocomplete="off" value="{{ old('cmnd') }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label" for="dk-dia-chi">Địa chỉ</label>
+                        <input type="text" id="dk-dia-chi" name="diaChi" class="form-control" autocomplete="address-level1" placeholder="Tỉnh / Thành phố" value="{{ old('diaChi') }}">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100">Tạo tài khoản</button>
+            </form>
+
+            <div class="auth-switch">
+                Đã có tài khoản? <a href="{{ route('tai-khoan.dang-nhap') }}" class="fw-semibold">Đăng nhập</a>
             </div>
-
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold fs-6 mt-3">
-                <i class="fa-solid fa-user-plus me-2"></i> Hoàn tất đăng ký
-            </button>
-        </form>
-
-        <div class="mt-4 pt-3 border-top text-center text-muted small">
-            <span>Đã có tài khoản? </span>
-            <a href="{{ route('tai-khoan.dang-nhap') }}" class="fw-bold text-primary text-decoration-none">Đăng nhập</a>
         </div>
     </div>
 </main>

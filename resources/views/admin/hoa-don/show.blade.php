@@ -8,108 +8,109 @@
     $khach = $datPhong?->khachHang;
     $tenLoaiPhong = $datPhong?->phong?->loaiPhong?->TenLoaiPhong;
 @endphp
-<div class="container my-4" style="max-width: 800px;">
+<div class="container admin-wide" style="max-width: 900px;">
     <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4 print-hidden">
-        <a href="{{ route('admin.hoa-don.index') }}" class="btn btn-outline-secondary">
-            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+        <a href="{{ route('admin.hoa-don.index') }}" class="back-link">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Danh sách hóa đơn
         </a>
         <div class="d-flex gap-2">
-            <button onclick="window.print()" class="btn btn-outline-primary">
-                <i class="fa-solid fa-print me-1"></i> In hóa đơn
+            <button type="button" onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-print" aria-hidden="true"></i>In hóa đơn
             </button>
             @if ($item->thanhToanDuoc())
                 <form method="POST" action="{{ route('admin.hoa-don.thanh-toan', $item) }}" class="action-form" onsubmit="return confirm('Xác nhận khách đã thanh toán số tiền này?')">
                     @csrf
-                    <button type="submit" class="btn btn-success">
-                        <i class="fa-solid fa-check-double me-1"></i> Xác nhận thanh toán
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-check-double" aria-hidden="true"></i>Xác nhận thanh toán
                     </button>
                 </form>
             @endif
         </div>
     </div>
 
-    <div class="card p-5 border-0 shadow-sm bg-white" id="printableInvoice">
-        <!-- HEADER HÓA ĐƠN -->
-        <div class="d-flex justify-content-between border-bottom pb-4 mb-4">
-            <div>
-                <h3 class="fw-bold text-primary mb-1"><i class="fa-solid fa-hotel me-2"></i>KHÁCH SẠN NGHỈ DƯỠNG</h3>
-                <p class="text-muted small mb-0">Địa chỉ: 123 Đường Bờ Biển, TP. Đà Nẵng</p>
-                <p class="text-muted small mb-0">Hotline: 0905 123 456 - Email: contact@hotel.vn</p>
+    <article class="invoice-sheet p-4 p-md-5" id="printableInvoice">
+        {{-- Đầu hóa đơn --}}
+        <header class="d-flex flex-wrap justify-content-between gap-3 pb-4 mb-4 border-bottom">
+            <div class="d-flex gap-3">
+                <span class="brand-mark" style="color: var(--brass-ink); background: var(--brass-tint);" aria-hidden="true">V</span>
+                <div>
+                    <div class="h3 mb-1">Khách sạn Nghỉ dưỡng Vip</div>
+                    <p class="text-muted small mb-0">123 Đường Bờ Biển, TP. Đà Nẵng</p>
+                    <p class="text-muted small mb-0">0909 123 456, contact@khachsanvip.vn</p>
+                </div>
             </div>
-            <div class="text-end">
-                <h4 class="fw-bold text-dark mb-1">HÓA ĐƠN THANH TOÁN</h4>
-                <p class="text-muted small mb-1">Số HD: <strong>#{{ $item->MaHoaDon }}</strong></p>
+            <div class="text-sm-end">
+                <h1 class="h2 mb-1">Hóa đơn #{{ $item->MaHoaDon }}</h1>
                 <p class="text-muted small mb-0">Ngày lập: {{ format_date($item->NgayThuTien) }}</p>
             </div>
+        </header>
+
+        {{-- Khách hàng và lưu trú --}}
+        <div class="row g-4 mb-4">
+            <div class="col-sm-6">
+                <h2 class="panel-title text-muted mb-2">Khách hàng</h2>
+                <p class="mb-1 fw-semibold">{{ $khach?->HoTen }}</p>
+                <p class="mb-0 small">Điện thoại: {{ $khach?->DienThoai }}</p>
+                <p class="mb-0 small">CMND/CCCD: {{ $khach?->CMND ?? 'Không có' }}</p>
+            </div>
+            <div class="col-sm-6 text-sm-end">
+                <h2 class="panel-title text-muted mb-2">Lưu trú</h2>
+                <p class="mb-1">Phòng {{ $datPhong?->MaPhong }} ({{ $tenLoaiPhong }})</p>
+                <p class="mb-0 small">Nhận phòng: {{ format_date($datPhong?->NgayNhan) }}</p>
+                <p class="mb-0 small">Trả phòng: {{ format_date($datPhong?->NgayTra) }} ({{ $calc['days'] ?? 1 }} đêm{{ ($calc['lateNights'] ?? 0) > 0 ? ', trả muộn '.$calc['lateNights'].' đêm' : '' }})</p>
+            </div>
         </div>
 
-        <!-- THÔNG TIN KHÁCH HÀNG & PHÒNG -->
-        <div class="row mb-4">
-            <div class="col-6">
-                <h6 class="fw-bold text-muted text-uppercase mb-2">Thông tin khách hàng</h6>
-                <p class="mb-1 fw-bold">{{ $khach?->HoTen }}</p>
-                <p class="mb-1 small">Điện thoại: {{ $khach?->DienThoai }}</p>
-                <p class="mb-1 small">CMND/CCCD: {{ $khach?->CMND ?? 'Không có' }}</p>
-            </div>
-            <div class="col-6 text-end">
-                <h6 class="fw-bold text-muted text-uppercase mb-2">Chi tiết lưu trú</h6>
-                <p class="mb-1">Phòng: <strong>Phòng {{ $datPhong?->MaPhong }}</strong> ({{ $tenLoaiPhong }})</p>
-                <p class="mb-1 small">Ngày nhận: {{ format_date($datPhong?->NgayNhan) }}</p>
-                <p class="mb-1 small">Ngày trả: {{ format_date($datPhong?->NgayTra) }} ({{ $calc['days'] ?? 1 }} đêm{{ ($calc['lateNights'] ?? 0) > 0 ? ', trả muộn '.$calc['lateNights'].' đêm' : '' }})</p>
-            </div>
-        </div>
-
-        <!-- BẢNG CHI TIẾT THANH TOÁN -->
-        <table class="table table-bordered compact-table mb-4">
-            <thead class="table-light">
-                <tr>
-                    <th>Khoản mục</th>
-                    <th class="text-center">Số lượng</th>
-                    <th class="text-end">Đơn giá</th>
-                    <th class="text-end">Thành tiền</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Tiền phòng ({{ $tenLoaiPhong }})</td>
-                    <td class="text-center">{{ $calc['days'] ?? 1 }} đêm</td>
-                    <td class="text-end">{{ format_currency($calc['roomRate'] ?? 0) }}</td>
-                    <td class="text-end fw-semibold">{{ format_currency($calc['roomTotal'] ?? 0) }}</td>
-                </tr>
-
-                @foreach ($calc['services'] ?? [] as $sv)
+        {{-- Chi tiết khoản thu --}}
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
                     <tr>
-                        <td>Dịch vụ: {{ $sv['TenDichVu'] }}</td>
-                        <td class="text-center">{{ $sv['SoLuong'] }}</td>
-                        <td class="text-end">{{ format_currency($sv['GiaDichVu']) }}</td>
-                        <td class="text-end fw-semibold">{{ format_currency($sv['TongTienDichVu']) }}</td>
+                        <th scope="col">Khoản mục</th>
+                        <th scope="col" class="text-center">Số lượng</th>
+                        <th scope="col" class="text-end">Đơn giá</th>
+                        <th scope="col" class="text-end">Thành tiền</th>
                     </tr>
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="3" class="text-end fs-5">TỔNG CỘNG:</th>
-                    <th class="text-end text-danger fs-4">{{ format_currency($item->SoTienThu) }}</th>
-                </tr>
-            </tfoot>
-        </table>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Tiền phòng ({{ $tenLoaiPhong }})</td>
+                        <td class="text-center">{{ $calc['days'] ?? 1 }} đêm</td>
+                        <td class="text-end">{{ format_currency($calc['roomRate'] ?? 0) }}</td>
+                        <td class="text-end fw-semibold">{{ format_currency($calc['roomTotal'] ?? 0) }}</td>
+                    </tr>
+                    @foreach ($calc['services'] ?? [] as $sv)
+                        <tr>
+                            <td>Dịch vụ: {{ $sv['TenDichVu'] }}</td>
+                            <td class="text-center">{{ $sv['SoLuong'] }}</td>
+                            <td class="text-end">{{ format_currency($sv['GiaDichVu']) }}</td>
+                            <td class="text-end fw-semibold">{{ format_currency($sv['TongTienDichVu']) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <dl class="summary-list ms-auto mt-2" style="max-width: 360px;">
+            <div class="is-total"><dt>Tổng cộng</dt><dd>{{ format_currency($item->SoTienThu) }}</dd></div>
+        </dl>
+
+        <footer class="d-flex flex-wrap justify-content-between align-items-end gap-3 mt-4 pt-4 border-top">
             <div>
-                <span>Trạng thái: </span>
+                <div class="small text-muted mb-1">Trạng thái</div>
                 @if ($item->daThanhToan())
-                    <span class="badge bg-success fs-6"><i class="fa-solid fa-check me-1"></i>ĐÃ THANH TOÁN</span>
+                    <span class="status-badge success">ĐÃ THANH TOÁN</span>
                 @elseif ($item->daHuy())
-                    <span class="badge bg-secondary fs-6"><i class="fa-solid fa-ban me-1"></i>ĐÃ HỦY (đơn đặt phòng đã hủy)</span>
+                    <span class="status-badge">ĐÃ HỦY (đơn đặt phòng đã hủy)</span>
                 @else
-                    <span class="badge bg-warning text-dark fs-6"><i class="fa-solid fa-hourglass-half me-1"></i>CHƯA THANH TOÁN</span>
+                    <span class="status-badge warning">CHƯA THANH TOÁN</span>
                 @endif
             </div>
             <div class="text-end">
-                <small class="text-muted d-block">Thu ngân</small>
+                <div class="small text-muted">Thu ngân</div>
                 <strong>{{ $item->nhanVien?->TenNhanVien ?? 'Quản trị viên' }}</strong>
             </div>
-        </div>
-    </div>
+        </footer>
+    </article>
 </div>
 @endsection

@@ -24,7 +24,7 @@
             @endif
             <div class="mb-3">
                 <label class="form-label fw-semibold">Tên dịch vụ <span class="text-danger">*</span></label>
-                <input type="text" name="tenDichVu" class="form-control" placeholder="Ví dụ: Ăn sáng, Massage, Giặt ủi..."
+                <input type="text" name="tenDichVu" class="form-control" placeholder="Ví dụ: Ăn sáng, Massage, Giặt ủi…"
                        value="{{ old('tenDichVu', $item?->TenDichVu) }}" required autofocus>
             </div>
 
@@ -41,7 +41,7 @@
                 <input type="file" name="fileAnh" class="form-control" accept="image/*">
                 @if (! empty($item?->HinhAnh))
                     <div class="mt-2">
-                        <img src="{{ asset($item->HinhAnh) }}" alt="Preview" style="max-height: 80px; border-radius: 6px;">
+                        <img src="{{ asset($item->HinhAnh) }}" alt="Ảnh hiện tại" width="107" height="80" style="max-height: 80px; width: auto; border-radius: 6px;">
                     </div>
                 @endif
             </div>

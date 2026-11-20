@@ -28,7 +28,7 @@
             <form class="toolbar-filter room-filter" method="GET" action="{{ route('admin.phong.index') }}">
                 <div class="form-row">
                     <label>Mã phòng</label>
-                    <input type="text" name="keyword" placeholder="Nhập mã phòng..." value="{{ $keyword }}">
+                    <input type="text" name="keyword" placeholder="Nhập mã phòng…" value="{{ $keyword }}">
                 </div>
 
                 <div class="form-row">
@@ -83,6 +83,7 @@
         @endif
 
         <!-- ROOM TABLE -->
+        <div class="table-responsive">
         <table class="table admin-table room-table align-middle">
             <thead>
                 <tr>
@@ -106,11 +107,11 @@
                         }
                     @endphp
                     <tr>
-                        <td><span class="id-badge">{{ $item->MaPhong }}</span></td>
+                        <td><span class="door-plate">{{ $item->MaPhong }}</span></td>
                         <td>
                             <div class="image-thumb">
                                 @if (! empty($item->HinhAnhDaiDien))
-                                    <img src="{{ asset($item->HinhAnhDaiDien) }}" alt="Anh phong" style="width:60px; height:45px; object-fit:cover; border-radius:6px;">
+                                    <img src="{{ asset($item->HinhAnhDaiDien) }}" alt="" width="64" height="46" style="width:60px; height:45px; object-fit:cover; border-radius:6px;">
                                 @else
                                     <span class="text-muted small">Chưa có ảnh</span>
                                 @endif
@@ -146,6 +147,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 @endsection
