@@ -3,12 +3,15 @@
 @section('title', 'Quản lý Hóa đơn')
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-bold mb-0">Quản lý hóa đơn</h1>
+<div class="container admin-wide">
+    <div class="page-head">
+        <div>
+            <h1>Quản lý hóa đơn</h1>
+            <p>Hóa đơn được lập khi trả phòng; mở từng hóa đơn để xác nhận thanh toán hoặc in.</p>
+        </div>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4">
+    <div class="admin-panel p-4">
         <div class="table-responsive">
             <table class="table admin-table align-middle">
                 <thead>
@@ -33,13 +36,13 @@
                                 <div class="small text-muted">{{ $datPhong?->khachHang?->DienThoai }}</div>
                             </td>
                             <td>
-                                <strong>Phòng {{ $datPhong?->MaPhong }}</strong>
+                                <span class="door-plate me-2" aria-hidden="true">{{ $datPhong?->MaPhong }}</span><span class="visually-hidden">Phòng {{ $datPhong?->MaPhong }}</span>
                                 <div class="small text-muted">{{ $datPhong?->phong?->loaiPhong?->TenLoaiPhong }}</div>
                             </td>
                             <td>
                                 <small>Ngày lập: {{ format_date($item->NgayThuTien) }}</small>
                             </td>
-                            <td class="text-danger fw-bold fs-6">
+                            <td class="fw-semibold text-nowrap">
                                 {{ format_currency($item->SoTienThu) }}
                             </td>
                             <td>

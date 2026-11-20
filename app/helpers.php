@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\AnhThuNhoService;
 use Illuminate\Support\Carbon;
 
 /*
@@ -38,5 +39,38 @@ if (! function_exists('format_date')) {
         $timestamp = strtotime((string) $date);
 
         return $timestamp ? date('d/m/Y', $timestamp) : '';
+    }
+}
+
+if (! function_exists('anh_url')) {
+    /**
+     * URL ảnh để hiển thị: ảnh nhỏ WebP gần nhất mà không nhỏ hơn $beRong, nếu chưa có thì ảnh gốc.
+     */
+    function anh_url(?string $anh, int $beRong = 640): string
+    {
+        if (empty($anh)) {
+            return '';
+        }
+
+        $coSan = app(AnhThuNhoService::class)->anhCoSan($anh);
+        foreach ($coSan as $rong => $duongDan) {
+            if ($rong >= $beRong) {
+                return asset($duongDan);
+            }
+        }
+
+        return asset($anh);
+    }
+}
+
+if (! function_exists('anh_srcset')) {
+    /**
+     * Giá trị srcset từ các ảnh nhỏ đã tạo ("…/640.webp 640w, …/1600.webp 1600w"); rỗng nếu chưa có.
+     */
+    function anh_srcset(?string $anh): string
+    {
+        return collect(app(AnhThuNhoService::class)->anhCoSan($anh))
+            ->map(fn (string $duongDan, int $rong) => asset($duongDan).' '.$rong.'w')
+            ->implode(', ');
     }
 }

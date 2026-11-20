@@ -3,18 +3,18 @@
 @section('title', 'Quản lý chi tiết sử dụng dịch vụ')
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container admin-wide">
+    <div class="page-head">
         <div>
-            <h1 class="fw-bold mb-1">Chi tiết sử dụng dịch vụ</h1>
-            <p class="text-muted mb-0">Theo dõi tất cả dịch vụ được khách hàng sử dụng theo từng đơn đặt phòng</p>
+            <h1>Chi tiết sử dụng dịch vụ</h1>
+            <p>Theo dõi tất cả dịch vụ được khách hàng sử dụng theo từng đơn đặt phòng</p>
         </div>
-        <a href="{{ route('admin.ct-dich-vu.create') }}" class="btn btn-success">
+        <a href="{{ route('admin.ct-dich-vu.create') }}" class="btn btn-primary">
             <i class="fa-solid fa-plus me-1"></i> Thêm chi tiết dịch vụ
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4">
+    <div class="admin-panel p-4">
         <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>

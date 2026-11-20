@@ -8,18 +8,18 @@
     $soSao = (int) old('soSao', $item?->SoSao ?? 5);
     $nhanSao = [5 => '⭐⭐⭐⭐⭐ 5 sao - Rất tốt', 4 => '⭐⭐⭐⭐ 4 sao - Tốt', 3 => '⭐⭐⭐ 3 sao - Bình thường', 2 => '⭐⭐ 2 sao - Chưa tốt', 1 => '⭐ 1 sao - Kém'];
 @endphp
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container admin-wide">
+    <div class="page-head">
         <div>
-            <h1 class="fw-bold mb-1">{{ $item ? "Sửa đánh giá #{$item->ID}" : 'Thêm đánh giá mới' }}</h1>
-            <p class="text-muted mb-0">Cập nhật thông tin đánh giá chất lượng phòng</p>
+            <h1>{{ $item ? "Sửa đánh giá #{$item->ID}" : 'Thêm đánh giá mới' }}</h1>
+            <p>Cập nhật thông tin đánh giá chất lượng phòng</p>
         </div>
         <a href="{{ route('admin.danh-gia.index') }}" class="btn btn-outline-secondary">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4" style="max-width: 650px;">
+    <div class="admin-panel p-4" style="max-width: 650px;">
         @if ($errors->any())
             <div class="alert alert-danger mb-3">{{ $errors->first() }}</div>
         @endif
@@ -30,8 +30,8 @@
                 @method('PUT')
             @endif
             <div class="mb-3">
-                <label class="form-label fw-semibold">Phòng được đánh giá <span class="text-danger">*</span></label>
-                <select name="maPhong" class="form-select" required>
+                <label for="danh-gia-form-maPhong" class="form-label fw-semibold">Phòng được đánh giá <span class="text-danger">*</span></label>
+                <select id="danh-gia-form-maPhong" name="maPhong" class="form-select" required>
                     <option value="">-- Chọn phòng --</option>
                     @foreach ($phongs as $p)
                         <option value="{{ $p->MaPhong }}" @selected(old('maPhong', $item?->MaPhong) == $p->MaPhong)>
@@ -42,8 +42,8 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Số sao đánh giá <span class="text-danger">*</span></label>
-                <select name="soSao" class="form-select" required>
+                <label for="danh-gia-form-soSao" class="form-label fw-semibold">Số sao đánh giá <span class="text-danger">*</span></label>
+                <select id="danh-gia-form-soSao" name="soSao" class="form-select" required>
                     @foreach ($nhanSao as $sao => $nhan)
                         <option value="{{ $sao }}" @selected($soSao === $sao)>{{ $nhan }}</option>
                     @endforeach
@@ -51,13 +51,13 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Ngày đánh giá</label>
-                <input type="date" name="ngayDanhGia" class="form-control" value="{{ old('ngayDanhGia', $item?->NgayDanhGia?->format('Y-m-d') ?? now()->format('Y-m-d')) }}">
+                <label for="danh-gia-form-ngayDanhGia" class="form-label fw-semibold">Ngày đánh giá</label>
+                <input id="danh-gia-form-ngayDanhGia" type="date" name="ngayDanhGia" class="form-control" value="{{ old('ngayDanhGia', $item?->NgayDanhGia?->format('Y-m-d') ?? now()->format('Y-m-d')) }}">
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Nội dung nhận xét <span class="text-danger">*</span></label>
-                <textarea name="noiDung" rows="4" class="form-control" placeholder="Nhập cảm nhận, nhận xét về phòng…" required>{{ old('noiDung', $item?->NoiDung) }}</textarea>
+                <label for="danh-gia-form-noiDung" class="form-label fw-semibold">Nội dung nhận xét <span class="text-danger">*</span></label>
+                <textarea id="danh-gia-form-noiDung" name="noiDung" rows="4" class="form-control" placeholder="Nhập cảm nhận, nhận xét về phòng…" required>{{ old('noiDung', $item?->NoiDung) }}</textarea>
             </div>
 
             <div class="d-flex gap-2 mt-4">

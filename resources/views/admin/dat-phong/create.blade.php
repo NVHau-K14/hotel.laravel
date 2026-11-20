@@ -3,15 +3,18 @@
 @section('title', 'Tạo đơn đặt phòng mới')
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-bold mb-0">Tạo đơn đặt phòng mới</h1>
+<div class="container admin-wide">
+    <div class="page-head">
+        <div>
+            <h1>Tạo đơn đặt phòng mới</h1>
+            <p>Dùng khi khách đặt qua điện thoại hoặc trực tiếp tại quầy.</p>
+        </div>
         <a href="{{ route('admin.dat-phong.index') }}" class="btn btn-outline-secondary">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4" style="max-width: 650px;">
+    <div class="admin-panel p-4" style="max-width: 650px;">
         @if ($errors->any())
             <div class="alert alert-danger mb-3">{{ $errors->first() }}</div>
         @endif
@@ -19,8 +22,8 @@
         <form method="POST" action="{{ route('admin.dat-phong.store') }}">
             @csrf
             <div class="mb-3">
-                <label class="form-label fw-semibold">Khách hàng <span class="text-danger">*</span></label>
-                <select name="maKhachHang" class="form-select" required>
+                <label for="dat-phong-create-maKhachHang" class="form-label fw-semibold">Khách hàng <span class="text-danger">*</span></label>
+                <select id="dat-phong-create-maKhachHang" name="maKhachHang" class="form-select" required>
                     <option value="">-- Chọn khách hàng --</option>
                     @foreach ($customers as $c)
                         <option value="{{ $c->MaKhachHang }}" @selected(old('maKhachHang') == $c->MaKhachHang)>
@@ -31,8 +34,8 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Chọn phòng <span class="text-danger">*</span></label>
-                <select name="maPhong" class="form-select" required>
+                <label for="dat-phong-create-maPhong" class="form-label fw-semibold">Chọn phòng <span class="text-danger">*</span></label>
+                <select id="dat-phong-create-maPhong" name="maPhong" class="form-select" required>
                     <option value="">-- Chọn phòng --</option>
                     @foreach ($rooms as $r)
                         <option value="{{ $r->MaPhong }}" @selected(old('maPhong') == $r->MaPhong)>
@@ -44,18 +47,18 @@
 
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Ngày nhận phòng <span class="text-danger">*</span></label>
-                    <input type="date" name="ngayNhan" class="form-control" value="{{ old('ngayNhan', now()->format('Y-m-d')) }}" required>
+                    <label for="dat-phong-create-ngayNhan" class="form-label fw-semibold">Ngày nhận phòng <span class="text-danger">*</span></label>
+                    <input id="dat-phong-create-ngayNhan" type="date" name="ngayNhan" class="form-control" value="{{ old('ngayNhan', now()->format('Y-m-d')) }}" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Ngày trả phòng <span class="text-danger">*</span></label>
-                    <input type="date" name="ngayTra" class="form-control" value="{{ old('ngayTra', now()->addDay()->format('Y-m-d')) }}" required>
+                    <label for="dat-phong-create-ngayTra" class="form-label fw-semibold">Ngày trả phòng <span class="text-danger">*</span></label>
+                    <input id="dat-phong-create-ngayTra" type="date" name="ngayTra" class="form-control" value="{{ old('ngayTra', now()->addDay()->format('Y-m-d')) }}" required>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Trạng thái khởi tạo</label>
-                <select name="trangThai" class="form-select">
+                <label for="dat-phong-create-trangThai" class="form-label fw-semibold">Trạng thái khởi tạo</label>
+                <select id="dat-phong-create-trangThai" name="trangThai" class="form-select">
                     <option value="DA_XAC_NHAN" @selected(old('trangThai') === 'DA_XAC_NHAN')>Đã xác nhận (Đặt trước)</option>
                     <option value="DANG_SU_DUNG" @selected(old('trangThai') === 'DANG_SU_DUNG')>Khách nhận phòng ngay (Check-in)</option>
                     <option value="CHO_ADMIN_DUYET" @selected(old('trangThai') === 'CHO_ADMIN_DUYET')>Chờ duyệt</option>

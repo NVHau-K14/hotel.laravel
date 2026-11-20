@@ -35,7 +35,7 @@
 
         <div>
             <figure class="contact-figure">
-                <img src="{{ asset('Images/ChiTietPhong/Phong201/02.jpg') }}" alt="Phòng studio có bàn làm việc dài cạnh cửa sổ và bếp nhỏ" loading="lazy" decoding="async" width="800" height="1000">
+                <img src="{{ anh_url('Images/ChiTietPhong/Phong201/02.jpg', 640) }}" srcset="{{ anh_srcset('Images/ChiTietPhong/Phong201/02.jpg') }}" sizes="(min-width: 992px) 600px, 100vw" alt="Phòng studio có bàn làm việc dài cạnh cửa sổ và bếp nhỏ" loading="lazy" decoding="async" width="800" height="1000">
             </figure>
             <a class="btn btn-primary btn-lg w-100 mt-3" href="{{ route('phong.index') }}">Xem phòng và đặt ngay</a>
         </div>

@@ -3,15 +3,18 @@
 @section('title', 'Quản lý loại phòng')
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-bold mb-0">Quản lý loại phòng</h1>
-        <a href="{{ route('admin.loai-phong.create') }}" class="btn btn-success">
+<div class="container admin-wide">
+    <div class="page-head">
+        <div>
+            <h1>Quản lý loại phòng</h1>
+            <p>Loại phòng quyết định giá và mô tả hiển thị cho khách.</p>
+        </div>
+        <a href="{{ route('admin.loai-phong.create') }}" class="btn btn-primary">
             <i class="fa-solid fa-plus me-1"></i> Thêm loại phòng
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4">
+    <div class="admin-panel p-4">
         <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>
@@ -27,11 +30,11 @@
                 @forelse ($items as $item)
                     <tr>
                         <td><span class="id-badge">{{ $item->MaLoaiPhong }}</span></td>
-                        <td class="fw-bold fs-6">{{ $item->TenLoaiPhong }}</td>
-                        <td class="text-primary fw-bold">{{ format_currency($item->GiaPhong) }}</td>
+                        <td class="fw-semibold">{{ $item->TenLoaiPhong }}</td>
+                        <td class="fw-semibold text-nowrap">{{ format_currency($item->GiaPhong) }}</td>
                         <td class="text-muted">{{ $item->MoTa ?? 'Chưa có mô tả' }}</td>
                         <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary me-1" href="{{ route('admin.loai-phong.edit', $item) }}">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('admin.loai-phong.edit', $item) }}">
                                 <i class="fa-solid fa-pen-to-square me-1"></i>Sửa
                             </a>
                             <form method="POST" action="{{ route('admin.loai-phong.destroy', $item) }}" class="action-form" onsubmit="return confirm('Bạn có chắc muốn xóa loại phòng này?')">
@@ -54,7 +57,7 @@
     </div>
 
     @if ($daXoa->isNotEmpty())
-        <div class="card admin-card border-0 shadow-sm p-4 mt-4">
+        <div class="admin-panel p-4 mt-4">
             <h5 class="fw-bold mb-1">Loại phòng đã ngừng sử dụng</h5>
             <p class="text-muted small mb-3">Các phòng thuộc những loại này không hiện ở trang khách và không nhận đặt mới.</p>
             <div class="table-responsive">

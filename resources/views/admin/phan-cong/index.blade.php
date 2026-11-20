@@ -4,13 +4,13 @@
 @section('title', $tieuDe)
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container admin-wide">
+    <div class="page-head">
         <div>
-            <h1 class="fw-bold mb-1">Quản lý phân công công việc</h1>
-            <p class="text-muted mb-0">Lịch làm việc và phân công nhiệm vụ cho nhân viên khách sạn</p>
+            <h1>Quản lý phân công công việc</h1>
+            <p>Lịch làm việc và phân công nhiệm vụ cho nhân viên khách sạn</p>
         </div>
-        <a href="{{ route('admin.phan-cong.create') }}" class="btn btn-success">
+        <a href="{{ route('admin.phan-cong.create') }}" class="btn btn-primary">
             <i class="fa-solid fa-plus me-1"></i> Thêm phân công
         </a>
     </div>
@@ -38,7 +38,7 @@
         </form>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4">
+    <div class="admin-panel p-4">
         <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>
@@ -60,7 +60,7 @@
                                 <i class="fa-regular fa-calendar me-1"></i> {{ format_date($item->NgayPhanCong) }}
                             </span>
                         </td>
-                        <td class="fw-bold fs-6">{{ $item->LoaiCongViec }}</td>
+                        <td class="fw-semibold">{{ $item->LoaiCongViec }}</td>
                         <td>
                             @if (! empty($item->nhanVien?->TenNhanVien))
                                 <div class="fw-semibold text-dark">{{ $item->nhanVien->TenNhanVien }}</div>
@@ -73,7 +73,7 @@
                             <span class="badge bg-light text-dark border">{{ $item->nhanVien?->chucVu?->TenChucVu ?? '-' }}</span>
                         </td>
                         <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary me-1" href="{{ route('admin.phan-cong.edit', $item) }}">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('admin.phan-cong.edit', $item) }}">
                                 <i class="fa-solid fa-pen-to-square me-1"></i>Sửa
                             </a>
                             <form method="POST" action="{{ route('admin.phan-cong.destroy', $item) }}" class="action-form" onsubmit="return confirm('Bạn có chắc muốn xóa phân công này?')">

@@ -4,15 +4,18 @@
 @section('title', $item ? "Sửa nhân viên #{$item->MaNhanVien}" : 'Thêm nhân viên mới')
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-bold mb-0">{{ $item ? "Sửa nhân viên #{$item->MaNhanVien}" : 'Thêm nhân viên mới' }}</h1>
+<div class="container admin-wide">
+    <div class="page-head">
+        <div>
+            <h1>{{ $item ? "Sửa nhân viên #{$item->MaNhanVien}" : 'Thêm nhân viên mới' }}</h1>
+            <p>Tài khoản đăng nhập và chức vụ quyết định quyền của nhân viên.</p>
+        </div>
         <a href="{{ route('admin.nhan-vien.index') }}" class="btn btn-outline-secondary">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4" style="max-width: 650px;">
+    <div class="admin-panel p-4" style="max-width: 650px;">
         @if ($errors->any())
             <div class="alert alert-danger mb-3">{{ $errors->first() }}</div>
         @endif
@@ -24,25 +27,25 @@
             @endif
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Tên đăng nhập <span class="text-danger">*</span></label>
-                    <input type="text" name="username" class="form-control" value="{{ $item ? $item->Username : old('username') }}"
+                    <label for="nhan-vien-form-username" class="form-label fw-semibold">Tên đăng nhập <span class="text-danger">*</span></label>
+                    <input id="nhan-vien-form-username" type="text" name="username" class="form-control" value="{{ $item ? $item->Username : old('username') }}"
                            {{ $item ? 'readonly' : 'required' }} placeholder="vd: nguyenvanb">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Mật khẩu {!! $item ? '(để trống nếu không đổi)' : '<span class="text-danger">*</span>' !!}</label>
-                    <input type="password" name="password" class="form-control" placeholder="Mật khẩu" minlength="8" maxlength="72" autocomplete="new-password" {{ $item ? '' : 'required' }}>
+                    <label for="nhan-vien-form-password" class="form-label fw-semibold">Mật khẩu {!! $item ? '(để trống nếu không đổi)' : '<span class="text-danger">*</span>' !!}</label>
+                    <input id="nhan-vien-form-password" type="password" name="password" class="form-control" placeholder="Mật khẩu" minlength="8" maxlength="72" autocomplete="new-password" {{ $item ? '' : 'required' }}>
                     <div class="form-text">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường và chữ số.{{ $item ? ' Để trống nếu không đổi.' : '' }}</div>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Họ và tên nhân viên <span class="text-danger">*</span></label>
-                <input type="text" name="tenNhanVien" class="form-control" value="{{ old('tenNhanVien', $item?->TenNhanVien) }}" required>
+                <label for="nhan-vien-form-tenNhanVien" class="form-label fw-semibold">Họ và tên nhân viên <span class="text-danger">*</span></label>
+                <input id="nhan-vien-form-tenNhanVien" type="text" name="tenNhanVien" class="form-control" value="{{ old('tenNhanVien', $item?->TenNhanVien) }}" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Chức vụ <span class="text-danger">*</span></label>
-                <select name="maChucVu" class="form-select" required>
+                <label for="nhan-vien-form-maChucVu" class="form-label fw-semibold">Chức vụ <span class="text-danger">*</span></label>
+                <select id="nhan-vien-form-maChucVu" name="maChucVu" class="form-select" required>
                     <option value="">-- Chọn chức vụ --</option>
                     @foreach ($chucVus as $cv)
                         {{-- Chỉ Quản lý mới gán được chức vụ Quản lý --}}
@@ -56,18 +59,18 @@
 
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Ngày sinh</label>
-                    <input type="date" name="ngaySinh" class="form-control" value="{{ old('ngaySinh', $item?->NgaySinh?->format('Y-m-d')) }}">
+                    <label for="nhan-vien-form-ngaySinh" class="form-label fw-semibold">Ngày sinh</label>
+                    <input id="nhan-vien-form-ngaySinh" type="date" name="ngaySinh" class="form-control" value="{{ old('ngaySinh', $item?->NgaySinh?->format('Y-m-d')) }}">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">CMND/CCCD</label>
-                    <input type="text" name="cmnd" class="form-control" value="{{ old('cmnd', $item?->CMND) }}">
+                    <label for="nhan-vien-form-cmnd" class="form-label fw-semibold">CMND/CCCD</label>
+                    <input id="nhan-vien-form-cmnd" type="text" name="cmnd" class="form-control" value="{{ old('cmnd', $item?->CMND) }}">
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Ngày vào làm</label>
-                <input type="date" name="ngayVaoLam" class="form-control" value="{{ old('ngayVaoLam', $item?->NgayVaoLam?->format('Y-m-d') ?? now()->format('Y-m-d')) }}">
+                <label for="nhan-vien-form-ngayVaoLam" class="form-label fw-semibold">Ngày vào làm</label>
+                <input id="nhan-vien-form-ngayVaoLam" type="date" name="ngayVaoLam" class="form-control" value="{{ old('ngayVaoLam', $item?->NgayVaoLam?->format('Y-m-d') ?? now()->format('Y-m-d')) }}">
             </div>
 
             <div class="d-flex gap-2 mt-4">

@@ -3,18 +3,18 @@
 @section('title', "Lịch sử đặt phòng - {$customer->HoTen}")
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container admin-wide">
+    <div class="page-head">
         <div>
-            <h1 class="fw-bold mb-0">Lịch sử đặt phòng: {{ $customer->HoTen }}</h1>
-            <p class="text-muted mb-0">Email: {{ $customer->Email }} | SĐT: {{ $customer->DienThoai }}</p>
+            <h1>Lịch sử đặt phòng: {{ $customer->HoTen }}</h1>
+            <p>{{ $customer->DienThoai }}, {{ $customer->Email ?: 'chưa có email' }}</p>
         </div>
         <a href="{{ route('admin.khach-hang.index') }}" class="btn btn-outline-secondary">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4">
+    <div class="admin-panel p-4">
         <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>

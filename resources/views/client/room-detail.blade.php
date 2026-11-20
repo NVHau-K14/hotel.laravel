@@ -17,7 +17,7 @@
         <section aria-label="Ảnh phòng">
             <div class="gallery-main">
                 @if (count($anhPhong))
-                    <img id="anh-chinh" src="{{ asset($anhPhong[0]) }}" alt="Phòng {{ $room->MaPhong }}, ảnh 1" width="1200" height="900" fetchpriority="high">
+                    <img id="anh-chinh" src="{{ anh_url($anhPhong[0], 1600) }}" srcset="{{ anh_srcset($anhPhong[0]) }}" sizes="(min-width: 992px) 64vw, 100vw" alt="Phòng {{ $room->MaPhong }}, ảnh 1" width="1200" height="900" fetchpriority="high">
                 @else
                     <div class="d-grid h-100" style="place-items:center">
                         <span class="door-plate door-plate-lg">{{ $room->MaPhong }}</span>
@@ -28,9 +28,9 @@
             @if (count($anhPhong) > 1)
                 <div class="gallery-thumbs">
                     @foreach ($anhPhong as $i => $anh)
-                        <button type="button" class="gallery-thumb" data-anh="{{ asset($anh) }}" data-mo-ta="Phòng {{ $room->MaPhong }}, ảnh {{ $i + 1 }}"
+                        <button type="button" class="gallery-thumb" data-anh="{{ anh_url($anh, 1600) }}" data-mo-ta="Phòng {{ $room->MaPhong }}, ảnh {{ $i + 1 }}"
                                 aria-pressed="{{ $i === 0 ? 'true' : 'false' }}" aria-label="Xem ảnh {{ $i + 1 }}">
-                            <img src="{{ asset($anh) }}" alt="" loading="lazy" decoding="async" width="200" height="150">
+                            <img src="{{ anh_url($anh) }}" alt="" loading="lazy" decoding="async" width="200" height="150">
                         </button>
                     @endforeach
                 </div>

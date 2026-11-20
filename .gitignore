@@ -31,3 +31,4 @@ Thumbs.db
 !/public/uploads/phong/.gitkeep
 /public/uploads/dichvu/*
 !/public/uploads/dichvu/.gitkeep
+/public/anh-nho

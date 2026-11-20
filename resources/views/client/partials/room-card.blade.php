@@ -7,7 +7,7 @@
 <article class="room-card">
     <div class="room-card-media">
         @if (! empty($p->HinhAnhDaiDien))
-            <img src="{{ asset($p->HinhAnhDaiDien) }}" alt="Phòng {{ $p->MaPhong }}" loading="lazy" decoding="async" width="600" height="450">
+            <img src="{{ anh_url($p->HinhAnhDaiDien) }}" alt="Phòng {{ $p->MaPhong }}" loading="lazy" decoding="async" width="600" height="450">
         @else
             <span class="placeholder-plate"><i class="fa-solid fa-bed fa-2x" aria-hidden="true"></i></span>
         @endif

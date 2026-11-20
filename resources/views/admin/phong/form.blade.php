@@ -4,15 +4,18 @@
 @section('title', $item ? "Sửa phòng #{$item->MaPhong}" : 'Thêm phòng mới')
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-bold mb-0">{{ $item ? "Sửa phòng #{$item->MaPhong}" : 'Thêm phòng mới' }}</h1>
+<div class="container admin-wide">
+    <div class="page-head">
+        <div>
+            <h1>{{ $item ? "Sửa phòng #{$item->MaPhong}" : 'Thêm phòng mới' }}</h1>
+            <p>Trạng thái đã đặt và đang thuê tự cập nhật theo đơn đặt phòng.</p>
+        </div>
         <a href="{{ route('admin.phong.index') }}" class="btn btn-outline-secondary">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại danh sách
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4" style="max-width: 650px;">
+    <div class="admin-panel p-4" style="max-width: 650px;">
         @if ($errors->any())
             <div class="alert alert-danger mb-3">{{ $errors->first() }}</div>
         @endif
@@ -23,8 +26,8 @@
                 @method('PUT')
             @endif
             <div class="mb-3">
-                <label class="form-label fw-semibold">Mã phòng <span class="text-danger">*</span></label>
-                <input type="number" name="maPhong" class="form-control" placeholder="Ví dụ: 101, 102…"
+                <label for="phong-form-maPhong" class="form-label fw-semibold">Mã phòng <span class="text-danger">*</span></label>
+                <input id="phong-form-maPhong" type="number" name="maPhong" class="form-control" placeholder="Ví dụ: 101, 102…"
                        value="{{ old('maPhong', $item?->MaPhong) }}" {{ $item ? 'readonly' : 'required' }}>
                 @if ($item)
                     <small class="text-muted">Mã số phòng không thể thay đổi sau khi tạo.</small>
@@ -32,8 +35,8 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Loại phòng <span class="text-danger">*</span></label>
-                <select name="maLoaiPhong" class="form-select" required>
+                <label for="phong-form-maLoaiPhong" class="form-label fw-semibold">Loại phòng <span class="text-danger">*</span></label>
+                <select id="phong-form-maLoaiPhong" name="maLoaiPhong" class="form-select" required>
                     <option value="">-- Chọn loại phòng --</option>
                     @foreach ($loaiPhongs as $lp)
                         <option value="{{ $lp->MaLoaiPhong }}" @selected(old('maLoaiPhong', $item?->MaLoaiPhong) == $lp->MaLoaiPhong)>
@@ -44,8 +47,8 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Trạng thái phòng</label>
-                <select name="trangThai" class="form-select">
+                <label for="phong-form-trangThai" class="form-label fw-semibold">Trạng thái phòng</label>
+                <select id="phong-form-trangThai" name="trangThai" class="form-select">
                     {{-- "Đã đặt" / "Đang thuê" do hệ thống tự tính từ đơn đặt phòng, admin chỉ chọn Trống hoặc Bảo trì --}}
                     @php($trangThaiForm = ($item?->TrangThai === \App\Models\Phong::BAO_TRI) ? \App\Models\Phong::BAO_TRI : \App\Models\Phong::TRONG)
                     @foreach (\App\Models\Phong::TRANG_THAI_CHON_TAY as $st)
@@ -58,14 +61,14 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Đường dẫn ảnh đại diện (URL hoặc tải lên)</label>
-                <input type="text" name="hinhAnh" class="form-control mb-2" placeholder="/Images/ChiTietPhong/Phong101/01.jpg"
+                <label for="phong-form-hinhAnh" class="form-label fw-semibold">Đường dẫn ảnh đại diện (URL hoặc tải lên)</label>
+                <input id="phong-form-hinhAnh" type="text" name="hinhAnh" class="form-control mb-2" placeholder="/Images/ChiTietPhong/Phong101/01.jpg"
                        value="{{ old('hinhAnh', $item?->HinhAnhDaiDien) }}">
                 <input type="file" name="fileAnh" class="form-control" accept="image/*">
                 @if (! empty($item?->HinhAnhDaiDien))
                     <div class="mt-2">
                         <small class="text-muted d-block mb-1">Ảnh hiện tại:</small>
-                        <img src="{{ asset($item->HinhAnhDaiDien) }}" alt="Ảnh hiện tại" width="133" height="100" style="max-height: 100px; width: auto; border-radius: 6px;">
+                        <img src="{{ anh_url($item->HinhAnhDaiDien) }}" alt="Ảnh hiện tại" width="133" height="100" style="max-height: 100px; width: auto; border-radius: 6px;">
                     </div>
                 @endif
             </div>

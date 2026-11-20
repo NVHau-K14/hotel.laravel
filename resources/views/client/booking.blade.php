@@ -66,7 +66,7 @@
         <aside class="summary-card" aria-label="Tóm tắt phòng">
             <div class="summary-card-media">
                 @if (! empty($room->HinhAnhDaiDien))
-                    <img src="{{ asset($room->HinhAnhDaiDien) }}" alt="" width="640" height="400">
+                    <img src="{{ anh_url($room->HinhAnhDaiDien) }}" alt="" width="640" height="400">
                 @endif
                 <span class="door-plate door-plate-on-image" aria-hidden="true">{{ $room->MaPhong }}</span>
             </div>

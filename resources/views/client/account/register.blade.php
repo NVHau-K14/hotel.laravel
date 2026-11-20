@@ -5,7 +5,7 @@
 @section('content')
 <main class="auth-split">
     <div class="auth-art" aria-hidden="true">
-        <img src="{{ asset('Images/ChiTietPhong/Phong201/02.jpg') }}" alt="" width="1200" height="800" decoding="async">
+        <img src="{{ anh_url('Images/ChiTietPhong/Phong201/02.jpg', 1600) }}" srcset="{{ anh_srcset('Images/ChiTietPhong/Phong201/02.jpg') }}" sizes="50vw" alt="" width="1200" height="800" decoding="async">
         <blockquote>Một tài khoản để đặt phòng, xem lịch sử lưu trú và gửi đánh giá.</blockquote>
     </div>
 

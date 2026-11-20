@@ -13,10 +13,13 @@
         'DA_HUY' => ['badge bg-danger', 'Đã hủy'],
     ];
 @endphp
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-bold mb-0">Quản lý đặt phòng</h1>
-        <a href="{{ route('admin.dat-phong.create') }}" class="btn btn-success">
+<div class="container admin-wide">
+    <div class="page-head">
+        <div>
+            <h1>Quản lý đặt phòng</h1>
+            <p>Lọc theo trạng thái để xử lý đơn theo từng bước: duyệt, nhận phòng, trả phòng.</p>
+        </div>
+        <a href="{{ route('admin.dat-phong.create') }}" class="btn btn-primary">
             <i class="fa-solid fa-plus me-1"></i> Tạo đơn đặt phòng
         </a>
     </div>

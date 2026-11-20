@@ -166,7 +166,7 @@ class DatPhongKhachTest extends TestCase
 
         $this->get(route('phong.show', $phong))
             ->assertOk()
-            ->assertSee('Images/ChiTietPhong/Phong101/02.jpg', false)
+            ->assertSee('ChiTietPhong/Phong101/02.', false)
             ->assertDontSee('Images/ChiTietPhong/Phong102/', false);
 
         // Ảnh tải lên nằm chung thư mục uploads: chỉ hiện đúng ảnh đại diện, không kéo ảnh phòng khác

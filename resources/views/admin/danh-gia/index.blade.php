@@ -3,18 +3,18 @@
 @section('title', 'Quản lý đánh giá khách hàng')
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container admin-wide">
+    <div class="page-head">
         <div>
-            <h1 class="fw-bold mb-1">Quản lý đánh giá khách hàng</h1>
-            <p class="text-muted mb-0">Xem và quản lý các nhận xét, đánh giá chất lượng phòng từ khách</p>
+            <h1>Quản lý đánh giá khách hàng</h1>
+            <p>Xem và quản lý các nhận xét, đánh giá chất lượng phòng từ khách</p>
         </div>
-        <a href="{{ route('admin.danh-gia.create') }}" class="btn btn-success">
+        <a href="{{ route('admin.danh-gia.create') }}" class="btn btn-primary">
             <i class="fa-solid fa-plus me-1"></i> Thêm đánh giá
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4">
+    <div class="admin-panel p-4">
         <div class="table-responsive">
         <table class="table admin-table align-middle">
             <thead>
@@ -56,7 +56,7 @@
                         </td>
                         <td><span class="text-muted">{{ format_date($item->NgayDanhGia) }}</span></td>
                         <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary me-1" href="{{ route('admin.danh-gia.edit', $item) }}">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('admin.danh-gia.edit', $item) }}">
                                 <i class="fa-solid fa-pen-to-square me-1"></i>Sửa
                             </a>
                             <form method="POST" action="{{ route('admin.danh-gia.destroy', $item) }}" class="action-form" onsubmit="return confirm('Bạn có chắc muốn xóa đánh giá này?')">

@@ -20,7 +20,7 @@
                 <figure class="service-item">
                     <div class="service-item-media">
                         @if (! empty($dv->HinhAnh))
-                            <img src="{{ asset($dv->HinhAnh) }}" alt="" loading="lazy" decoding="async" width="500" height="400">
+                            <img src="{{ anh_url($dv->HinhAnh) }}" alt="" loading="lazy" decoding="async" width="500" height="400">
                         @else
                             <span class="placeholder-plate"><i class="fa-solid fa-bell-concierge" aria-hidden="true"></i></span>
                         @endif

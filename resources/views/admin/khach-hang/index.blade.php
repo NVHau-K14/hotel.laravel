@@ -3,12 +3,15 @@
 @section('title', 'Quản lý Khách hàng')
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-bold mb-0">Quản lý khách hàng</h1>
+<div class="container admin-wide">
+    <div class="page-head">
+        <div>
+            <h1>Quản lý khách hàng</h1>
+            <p>Tài khoản khách đặt phòng; xem lịch sử lưu trú hoặc khóa tài khoản.</p>
+        </div>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4">
+    <div class="admin-panel p-4">
         <form method="GET" action="{{ route('admin.khach-hang.index') }}" class="d-flex gap-2 mb-3" style="max-width: 400px;">
             <input type="text" name="keyword" class="form-control form-control-sm" placeholder="Tìm theo tên, email, SĐT, CCCD…" value="{{ $keyword }}">
             <button type="submit" class="btn btn-sm btn-primary">Tìm</button>

@@ -13,7 +13,7 @@
                     <p>Xem phòng còn trống theo ngày bạn đến, gửi yêu cầu đặt phòng trực tuyến và lễ tân sẽ gọi lại để xác nhận.</p>
                 </div>
                 <figure class="hero-media">
-                    <img src="{{ asset('Images/ChiTietPhong/Phong301/01.jpg') }}" alt="Phòng ngủ với giường đôi, vách gỗ sồi và tủ âm tường"
+                    <img src="{{ anh_url('Images/ChiTietPhong/Phong301/01.jpg', 1600) }}" srcset="{{ anh_srcset('Images/ChiTietPhong/Phong301/01.jpg') }}" sizes="(min-width: 992px) 60vw, 100vw" alt="Phòng ngủ với giường đôi, vách gỗ sồi và tủ âm tường"
                          width="1200" height="930" fetchpriority="high" decoding="async">
                 </figure>
             </div>
@@ -77,7 +77,7 @@
                     <figure class="service-item">
                         <div class="service-item-media">
                             @if (! empty($dv->HinhAnh))
-                                <img src="{{ asset($dv->HinhAnh) }}" alt="" loading="lazy" decoding="async" width="500" height="400">
+                                <img src="{{ anh_url($dv->HinhAnh) }}" alt="" loading="lazy" decoding="async" width="500" height="400">
                             @else
                                 <span class="placeholder-plate"><i class="fa-solid fa-bell-concierge" aria-hidden="true"></i></span>
                             @endif

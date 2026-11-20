@@ -1224,7 +1224,37 @@ textarea.form-control,
 }
 
 .admin-panel.p-4 {
-    padding: clamp(1rem, 2vw, 1.5rem) !important;
+    --panel-pad: clamp(1rem, 2vw, 1.5rem);
+    padding: var(--panel-pad) !important;
+}
+
+/* Bảng trong khung có đệm: tràn sát mép trái/phải/dưới, cột đầu/cuối thẳng lề với nội dung khung */
+.admin-panel.p-4 > .table-responsive:last-child {
+    margin: 1.25rem calc(-1 * var(--panel-pad)) calc(-1 * var(--panel-pad));
+    border-top: 1px solid var(--line-soft);
+    border-radius: 0 0 12px 12px;
+}
+
+.admin-panel.p-4 > .table-responsive:first-child {
+    margin-top: calc(-1 * var(--panel-pad));
+    border-top: 0;
+    border-radius: 12px 12px 0 0;
+}
+
+.admin-panel.p-4 > .table-responsive:only-child {
+    border-radius: 12px;
+}
+
+.admin-panel.p-4 > .table-responsive > .table {
+    border-top: 0;
+}
+
+.admin-panel .table > :not(caption) > * > :first-child {
+    padding-left: var(--panel-pad, 1.25rem);
+}
+
+.admin-panel .table > :not(caption) > * > :last-child {
+    padding-right: var(--panel-pad, 1.25rem);
 }
 
 .admin-panel > .table,
@@ -1521,7 +1551,7 @@ textarea.form-control,
     content: "";
     position: absolute;
     inset: 0;
-    background: url('/Images/ChiTietPhong/Phong301/01.jpg') center / cover no-repeat;
+    background: var(--anh-nen) center / cover no-repeat;
     opacity: .16;
     mix-blend-mode: luminosity;
     pointer-events: none;

@@ -5,7 +5,7 @@
 @section('content')
 <main class="auth-split">
     <div class="auth-art" aria-hidden="true">
-        <img src="{{ asset('Images/ChiTietPhong/Phong301/01.jpg') }}" alt="" width="1200" height="800" decoding="async">
+        <img src="{{ anh_url('Images/ChiTietPhong/Phong301/01.jpg', 1600) }}" srcset="{{ anh_srcset('Images/ChiTietPhong/Phong301/01.jpg') }}" sizes="50vw" alt="" width="1200" height="800" decoding="async">
         <blockquote>Đăng nhập để đặt phòng nhanh và theo dõi các đơn đã gửi.</blockquote>
     </div>
 

@@ -3,23 +3,23 @@
 @section('title', "Thêm dịch vụ vào đơn #{$datPhong->MaCTDatPhong}")
 
 @section('content')
-<div class="container admin-wide my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container admin-wide">
+    <div class="page-head">
         <div>
-            <h1 class="fw-bold mb-1">Thêm dịch vụ vào đơn #{{ $datPhong->MaCTDatPhong }}</h1>
-            <p class="text-muted mb-0">Phòng {{ $datPhong->MaPhong }} - Khách: {{ $datPhong->khachHang?->HoTen ?? 'Khách' }}</p>
+            <h1>Thêm dịch vụ vào đơn #{{ $datPhong->MaCTDatPhong }}</h1>
+            <p>Phòng {{ $datPhong->MaPhong }} - Khách: {{ $datPhong->khachHang?->HoTen ?? 'Khách' }}</p>
         </div>
         <a href="{{ route('admin.dat-phong.show', $datPhong) }}" class="btn btn-outline-secondary">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại chi tiết đơn
         </a>
     </div>
 
-    <div class="card admin-panel border-0 shadow-sm p-4" style="max-width: 550px;">
+    <div class="admin-panel p-4" style="max-width: 550px;">
         <form method="POST" action="{{ route('admin.ct-dich-vu.luu-vao-don', $datPhong) }}">
             @csrf
             <div class="mb-3">
-                <label class="form-label fw-semibold">Chọn dịch vụ <span class="text-danger">*</span></label>
-                <select name="maDichVu" class="form-select" required autofocus>
+                <label for="ct-dich-vu-them-vao-don-maDichVu" class="form-label fw-semibold">Chọn dịch vụ <span class="text-danger">*</span></label>
+                <select id="ct-dich-vu-them-vao-don-maDichVu" name="maDichVu" class="form-select" required autofocus>
                     <option value="">-- Chọn dịch vụ cần thêm --</option>
                     @foreach ($dichVus as $dv)
                         <option value="{{ $dv->MaDichVu }}">
@@ -30,8 +30,8 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Số lượng <span class="text-danger">*</span></label>
-                <input type="number" name="soLuong" class="form-control" value="1" min="1" required>
+                <label for="ct-dich-vu-them-vao-don-soLuong" class="form-label fw-semibold">Số lượng <span class="text-danger">*</span></label>
+                <input id="ct-dich-vu-them-vao-don-soLuong" type="number" name="soLuong" class="form-control" value="1" min="1" required>
             </div>
 
             <div class="d-flex gap-2 mt-4">

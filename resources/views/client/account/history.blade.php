@@ -51,7 +51,7 @@
                                 <td>
                                     <div class="room-mini">
                                         @if (! empty($b->phong?->HinhAnhDaiDien))
-                                            <img src="{{ asset($b->phong->HinhAnhDaiDien) }}" alt="" loading="lazy" width="64" height="48">
+                                            <img src="{{ anh_url($b->phong->HinhAnhDaiDien) }}" alt="" loading="lazy" width="64" height="48">
                                         @endif
                                         <div>
                                             <strong>Phòng {{ $b->MaPhong }}</strong>

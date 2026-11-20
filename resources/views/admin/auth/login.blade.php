@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="admin-login">
-    <section class="admin-login-art" aria-hidden="true">
+    <section class="admin-login-art" aria-hidden="true" style="--anh-nen: url('{{ anh_url('Images/ChiTietPhong/Phong301/01.jpg', 1600) }}')">
         <div class="d-flex align-items-center gap-3">
             <span class="brand-mark">V</span>
             <span class="brand-name">
