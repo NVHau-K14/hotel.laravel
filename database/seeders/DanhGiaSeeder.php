@@ -11,8 +11,8 @@ class DanhGiaSeeder extends Seeder
     {
         // Bảng CTDANHGIA
         DB::table('CTDANHGIA')->insert([
-            ['ID' => 1, 'NoiDung' => 'Phòng sạch sẽ, nhân viên hỗ trợ rất nhiệt tình', 'NgayDanhGia' => '2026-05-07', 'MaPhong' => 101, 'MaKhachHang' => 1, 'MaCTDatPhong' => 1, 'SoSao' => 5],
-            ['ID' => 2, 'NoiDung' => 'Giao diện đặt phòng dễ dùng, phòng view đẹp', 'NgayDanhGia' => '2026-05-08', 'MaPhong' => 102, 'MaKhachHang' => 2, 'MaCTDatPhong' => 2, 'SoSao' => 5],
+            ['ID' => 1, 'NoiDung' => 'Phòng sạch sẽ, nhân viên hỗ trợ rất nhiệt tình', 'NgayDanhGia' => today()->subDays(7)->toDateString(), 'MaPhong' => 101, 'MaKhachHang' => 1, 'MaCTDatPhong' => 1, 'SoSao' => 5],
+            ['ID' => 2, 'NoiDung' => 'Giao diện đặt phòng dễ dùng, phòng view đẹp', 'NgayDanhGia' => today()->subDays(3)->toDateString(), 'MaPhong' => 102, 'MaKhachHang' => 2, 'MaCTDatPhong' => 2, 'SoSao' => 5],
         ]);
     }
 }

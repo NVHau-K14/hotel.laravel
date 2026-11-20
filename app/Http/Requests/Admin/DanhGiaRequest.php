@@ -16,8 +16,8 @@ class DanhGiaRequest extends FormRequest
         return [
             'noiDung' => ['required', 'string', 'max:255'],
             'maPhong' => ['required', 'integer', 'min:1', 'exists:PHONG,MaPhong'],
-            'ngayDanhGia' => ['nullable', 'date_format:Y-m-d'],
-            'soSao' => ['nullable', 'integer'],
+            'ngayDanhGia' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'soSao' => ['nullable', 'integer', 'between:1,5'],
         ];
     }
 
@@ -35,7 +35,9 @@ class DanhGiaRequest extends FormRequest
             'noiDung.max' => $sai,
             'ngayDanhGia.date_format' => $sai,
             'maPhong.exists' => 'Dữ liệu không hợp lệ, quá dài hoặc bản ghi liên quan không còn tồn tại. Vui lòng kiểm tra lại biểu mẫu.',
-            'soSao.integer' => 'Dữ liệu gửi lên không hợp lệ.',
+            'soSao.integer' => 'Số sao phải từ 1 đến 5.',
+            'soSao.between' => 'Số sao phải từ 1 đến 5.',
+            'ngayDanhGia.before_or_equal' => 'Ngày đánh giá không được ở tương lai.',
         ];
     }
 }

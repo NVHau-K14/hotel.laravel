@@ -59,6 +59,9 @@
                     <a class="btn btn-primary py-2 text-start" href="{{ route('phong.index') }}">
                         <i class="fa-solid fa-calendar-plus me-2"></i> Đặt phòng mới
                     </a>
+                    <a class="btn btn-outline-secondary py-2 text-start" href="{{ route('tai-khoan.sua') }}">
+                        <i class="fa-solid fa-user-pen me-2 text-primary"></i> Sửa thông tin / đổi mật khẩu
+                    </a>
                     <a class="btn btn-outline-secondary py-2 text-start" href="{{ route('tai-khoan.lich-su') }}">
                         <i class="fa-solid fa-receipt me-2 text-info"></i> Xem đơn đã đặt
                     </a>

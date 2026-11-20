@@ -20,8 +20,7 @@ class UpdatePhongRequest extends FormRequest
     {
         return [
             'maLoaiPhong' => ['required', 'integer', 'min:1', StorePhongRequest::loaiPhongConHoatDong()],
-            'trangThai' => ['sometimes', 'required', Rule::in(Phong::TRANG_THAI)],
-            'hinhAnh' => ['nullable', 'string'],
+            'trangThai' => ['sometimes', 'required', Rule::in(Phong::TRANG_THAI_CHON_TAY)],
             ...$this->rulesAnh(),
         ];
     }

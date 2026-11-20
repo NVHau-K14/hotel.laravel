@@ -10,7 +10,8 @@ class KhachHangSeeder extends Seeder
 {
     public function run(): void
     {
-        $matKhau = Hash::make('1');
+        // Mật khẩu mẫu đạt chuẩn: ≥ 8 ký tự, có chữ hoa, chữ thường, chữ số
+        $matKhau = Hash::make('Khach@1234');
 
         // Không ghi EmailConnexion: MySQL tự sinh từ Email
         DB::table('KHACHHANG')->insert([

@@ -15,6 +15,9 @@ class HoaDon extends Model
 
     public const DA_THANH_TOAN = 'DA_THANH_TOAN';
 
+    /** Hóa đơn chưa thanh toán của đơn đã bị hủy */
+    public const DA_HUY = 'DA_HUY';
+
     protected $table = 'HOADON';
 
     protected $primaryKey = 'MaHoaDon';
@@ -48,6 +51,20 @@ class HoaDon extends Model
         return $this->TrangThai === self::DA_THANH_TOAN;
     }
 
+    public function daHuy(): bool
+    {
+        return $this->TrangThai === self::DA_HUY;
+    }
+
+    /**
+     * Chỉ thanh toán được hóa đơn chưa thanh toán của đơn đang ở (trả phòng).
+     */
+    public function thanhToanDuoc(): bool
+    {
+        return $this->TrangThai === self::CHUA_THANH_TOAN
+            && $this->datPhong?->TrangThai === DatPhong::DANG_SU_DUNG;
+    }
+
     /**
      * Hóa đơn chính của một đơn: ưu tiên hóa đơn đã thanh toán, sau đó hóa đơn mới nhất
      * (HoaDonModel::getByBookingId).
@@ -56,6 +73,7 @@ class HoaDon extends Model
     {
         return self::query()
             ->where('MaCTDatPhong', $maCTDatPhong)
+            ->where('TrangThai', '<>', self::DA_HUY)
             ->orderByRaw('(TrangThai = ?) DESC', [self::DA_THANH_TOAN])
             ->orderByDesc('MaHoaDon')
             ->first();

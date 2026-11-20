@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\MatKhauManh;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -16,7 +17,7 @@ class UpdateNhanVienRequest extends FormRequest
     {
         return [
             ...StoreNhanVienRequest::rulesThongTin(),
-            'password' => ['nullable', 'string'],
+            'password' => ['nullable', 'string', new MatKhauManh([$this->route('nhan_vien')?->Username])],
         ];
     }
 

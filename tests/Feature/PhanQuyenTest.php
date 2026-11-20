@@ -19,14 +19,14 @@ class PhanQuyenTest extends TestCase
     public function test_vung_dang_nhap_that_roi_vao_trang_phong_bi_403(): void
     {
         // Đăng nhập qua form (mật khẩu bcrypt trong seeder)
-        $this->post(route('admin.dang-nhap.store'), ['username' => 'vung', 'password' => '1'])
+        $this->post(route('admin.dang-nhap.store'), ['username' => 'vung', 'password' => 'Nhanvien@1234'])
             ->assertRedirect(route('admin.dashboard'));
         $this->assertAuthenticatedAs($this->nhanVien('vung'), 'admin');
 
         $this->get('/admin/phong')
             ->assertForbidden()
             ->assertSee('Bạn không có quyền thực hiện chức năng này (PHONG).')
-            ->assertSee('Quay lại bảng điều khiển');
+            ->assertSee('Quay lại trang làm việc');
     }
 
     public function test_vung_chi_thay_menu_dashboard(): void

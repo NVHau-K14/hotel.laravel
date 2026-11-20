@@ -2,47 +2,36 @@
 
 namespace App\Http\Requests\Client;
 
-use App\Models\KhachHang;
+use App\Rules\MatKhauManh;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Đăng ký tài khoản khách hàng (AccountController::register + validate_customer của bản gốc).
- * Email trùng được kiểm tra ở KhachHang::taoKhachHang().
+ * Đăng ký tài khoản khách hàng.
+ * SĐT/email trùng tài khoản khác được kiểm tra ở KhachHang::dangKy() (khách vãng lai cũ được nhận lại bản ghi).
  */
 class DangKyRequest extends FormRequest
 {
     protected $stopOnFirstFailure = true;
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge(ThongTinKhach::chuanHoa($this));
+    }
+
     public function rules(): array
     {
         return [
-            'hoTen' => ['required', 'string', 'max:255'],
-            'dienThoai' => ['required', 'string', 'unique:KHACHHANG,DienThoai', 'regex:'.KhachHang::REGEX_DIEN_THOAI],
-            'password' => ['required', 'string'],
-            'email' => ['nullable', 'string', 'email:filter', 'max:254'],
-            'diaChi' => ['nullable', 'string', 'max:255'],
-            'cmnd' => ['nullable', 'string', 'max:20'],
+            ...ThongTinKhach::rules(),
+            'password' => ['required', 'string', new MatKhauManh([$this->input('dienThoai'), $this->input('email')]), 'confirmed'],
         ];
     }
 
     public function messages(): array
     {
-        $thieu = 'Vui lòng điền họ tên, số điện thoại và mật khẩu.';
-        $hoTenSdt = 'Vui lòng nhập họ tên và số điện thoại hợp lệ.';
-        $lienHe = 'Email, địa chỉ hoặc số giấy tờ không hợp lệ hoặc quá dài.';
-
         return [
-            'string' => 'Dữ liệu gửi lên không hợp lệ.',
-            'hoTen.required' => $thieu,
-            'dienThoai.required' => $thieu,
-            'password.required' => $thieu,
-            'dienThoai.unique' => 'Số điện thoại này đã được đăng ký tài khoản.',
-            'hoTen.max' => $hoTenSdt,
-            'dienThoai.regex' => $hoTenSdt,
-            'email.email' => $lienHe,
-            'email.max' => $lienHe,
-            'diaChi.max' => $lienHe,
-            'cmnd.max' => $lienHe,
+            ...ThongTinKhach::messages(),
+            'password.required' => 'Vui lòng điền họ tên, số điện thoại và mật khẩu.',
+            'password.confirmed' => 'Mật khẩu nhập lại không khớp.',
         ];
     }
 }

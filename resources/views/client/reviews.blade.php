@@ -70,7 +70,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div>
                             <span class="badge bg-primary me-2">Phòng {{ $item->MaPhong }}</span>
-                            <strong class="text-dark">{{ $item->khachHang?->HoTen ?? 'Khách hàng ẩn danh' }}</strong>
+                            <strong class="text-dark">{{ $item->khachHang?->HoTen ?? 'Khách sạn Vip (phản hồi)' }}</strong>
                         </div>
                         <div class="text-warning">
                             @for ($s = 1; $s <= 5; $s++)

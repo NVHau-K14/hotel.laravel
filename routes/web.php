@@ -20,7 +20,8 @@ Route::get('phong', [RoomController::class, 'index'])->name('phong.index');
 Route::get('phong/{phong}', [RoomController::class, 'show'])->name('phong.show')
     ->missing(fn () => redirect()->route('phong.index')->thongBao('danger', 'Không tìm thấy thông tin phòng.'));
 
-Route::controller(BookingController::class)->name('dat-phong.')->group(function () {
+// Đặt phòng bắt buộc đăng nhập tài khoản khách hàng (chưa có tài khoản thì đăng ký; không đăng nhập chỉ xem được)
+Route::controller(BookingController::class)->name('dat-phong.')->middleware('auth:web')->group(function () {
     $khongCoPhong = fn () => redirect()->route('phong.index')->thongBao('danger', 'Vui lòng chọn phòng hợp lệ để đặt.');
     Route::get('phong/{phong}/dat-phong', 'create')->name('create')->missing($khongCoPhong);
     Route::post('phong/{phong}/dat-phong', 'store')->name('store')->missing($khongCoPhong);
@@ -44,6 +45,9 @@ Route::prefix('tai-khoan')->name('tai-khoan.')->controller(AccountController::cl
 
     Route::middleware('auth:web')->group(function () {
         Route::get('/', 'profile')->name('ho-so');
+        Route::get('sua', 'edit')->name('sua');
+        Route::put('/', 'update')->name('cap-nhat');
+        Route::put('mat-khau', 'changePassword')->name('doi-mat-khau');
         Route::get('lich-su', 'history')->name('lich-su');
         Route::get('don/{datPhong}', 'detail')->name('chi-tiet')
             ->missing(fn () => redirect()->route('tai-khoan.lich-su')

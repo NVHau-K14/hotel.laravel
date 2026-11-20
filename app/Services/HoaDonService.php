@@ -44,7 +44,13 @@ class HoaDonService
             true
         );
 
-        $soNgay = max(1, (int) $datPhong->NgayNhan->diffInDays($datPhong->NgayTra));
+        // Khách đang ở quá ngày trả: tính tới hôm nay (mỗi đêm ở thêm tính đúng giá phòng đã đặt)
+        $ngayTraTinhTien = $datPhong->NgayTra;
+        if ($datPhong->TrangThai === DatPhong::DANG_SU_DUNG && today()->greaterThan($datPhong->NgayTra)) {
+            $ngayTraTinhTien = today();
+        }
+        $soDemDat = max(1, (int) $datPhong->NgayNhan->diffInDays($datPhong->NgayTra));
+        $soNgay = max(1, (int) $datPhong->NgayNhan->diffInDays($ngayTraTinhTien));
         $giaPhong = (int) ($datPhong->GiaPhong ?? 0);
         $tienPhong = $soNgay * $giaPhong;
 
@@ -55,6 +61,7 @@ class HoaDonService
         return [
             'booking' => $datPhong,
             'days' => $soNgay,
+            'lateNights' => $soNgay - $soDemDat,
             'roomRate' => $giaPhong,
             'roomTotal' => $tienPhong,
             'services' => $dichVus,
@@ -163,7 +170,12 @@ class HoaDonService
                 'SoTienThu' => $chiTiet['grandTotal'],
                 'ChiTietJSON' => $chiTiet,
             ]);
-            $datPhong->update(['payment_status' => DatPhong::THANH_TOAN_XONG]);
+            $capNhatDon = ['payment_status' => DatPhong::THANH_TOAN_XONG];
+            // Trả phòng muộn: ghi lại ngày trả thực tế
+            if (today()->greaterThan($datPhong->NgayTra)) {
+                $capNhatDon['NgayTra'] = today()->toDateString();
+            }
+            $datPhong->update($capNhatDon);
 
             // Đơn chuyển sang DA_HOAN_THANH, phòng được giải phóng
             $this->datPhongService->updateStatus((int) $hoaDon->MaCTDatPhong, DatPhong::DA_HOAN_THANH);

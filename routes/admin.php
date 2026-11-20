@@ -39,6 +39,9 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('quyen:DASHBOARD');
 
     // Bản ghi không tồn tại → về danh sách kèm thông báo (giống bản gốc), không trả 404
+    Route::post('loai-phong/{loai_phong}/khoi-phuc', [LoaiPhongController::class, 'restore'])->name('loai-phong.khoi-phuc')
+        ->middleware('quyen:LOAI_PHONG')
+        ->missing(fn () => redirect()->route('admin.loai-phong.index')->thongBao('danger', 'Loại phòng không tồn tại.'));
     Route::resource('loai-phong', LoaiPhongController::class)->except('show')
         ->middleware('quyen:LOAI_PHONG')
         ->missing(fn () => redirect()->route('admin.loai-phong.index')->thongBao('danger', 'Loại phòng không tồn tại.'));

@@ -17,8 +17,10 @@ class LoaiPhongController extends Controller
     {
         // Chỉ hiện loại phòng chưa bị xóa mềm
         $items = LoaiPhong::conHoatDong()->orderBy('MaLoaiPhong')->get();
+        // Loại phòng đã ngừng (xóa mềm) hiện riêng để khôi phục
+        $daXoa = LoaiPhong::where('DaXoa', true)->orderBy('MaLoaiPhong')->get();
 
-        return view('admin.loai-phong.index', compact('items'));
+        return view('admin.loai-phong.index', compact('items', 'daXoa'));
     }
 
     public function create(): View
@@ -56,6 +58,14 @@ class LoaiPhongController extends Controller
         ]);
 
         return redirect()->route('admin.loai-phong.index')->thongBao('success', "Cập nhật loại phòng \"$ten\" thành công!");
+    }
+
+    public function restore(LoaiPhong $loaiPhong): RedirectResponse
+    {
+        $loaiPhong->khoiPhuc();
+
+        return redirect()->route('admin.loai-phong.index')
+            ->thongBao('success', "Đã khôi phục loại phòng \"{$loaiPhong->TenLoaiPhong}\".");
     }
 
     public function destroy(LoaiPhong $loaiPhong): RedirectResponse

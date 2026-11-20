@@ -24,24 +24,24 @@
                 </select>
             </div>
 
-            <div class="col-md-2">
-                <label class="form-label small fw-semibold">Giá từ</label>
-                <input type="number" name="giaTu" class="form-control form-control-sm" placeholder="Từ" value="{{ $giaTu }}">
-            </div>
-
-            <div class="col-md-2">
-                <label class="form-label small fw-semibold">Giá đến</label>
-                <input type="number" name="giaDen" class="form-control form-control-sm" placeholder="Đến" value="{{ $giaDen }}">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Khoảng giá / đêm</label>
+                <select name="khoangGia" class="form-select form-select-sm">
+                    <option value="">Tất cả mức giá</option>
+                    @foreach (\App\Models\Phong::KHOANG_GIA as $ma => [$nhan])
+                        <option value="{{ $ma }}" @selected($khoangGia === $ma)>{{ $nhan }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="col-md-2">
                 <label class="form-label small fw-semibold">Ngày nhận</label>
-                <input type="date" name="ngayNhan" class="form-control form-control-sm" value="{{ $ngayNhan }}">
+                <input type="date" name="ngayNhan" class="form-control form-control-sm" value="{{ $ngayNhan }}" min="{{ today()->toDateString() }}">
             </div>
 
             <div class="col-md-2">
                 <label class="form-label small fw-semibold">Ngày trả</label>
-                <input type="date" name="ngayTra" class="form-control form-control-sm" value="{{ $ngayTra }}">
+                <input type="date" name="ngayTra" class="form-control form-control-sm" value="{{ $ngayTra }}" min="{{ today()->addDay()->toDateString() }}">
             </div>
 
             <div class="col-md-1 d-flex align-items-end">
@@ -71,7 +71,7 @@
                     <strong class="text-primary fs-5">{{ format_currency($p->loaiPhong?->GiaPhong) }} / đêm</strong>
                     <div class="card-actions mt-3">
                         <a class="btn small" href="{{ route('phong.show', $p) }}">Chi tiết</a>
-                        @if ($p->TrangThai !== \App\Models\Phong::BAO_TRI)
+                        @if ($p->nhanDatPhong())
                             {{-- Mang theo khoảng ngày đang lọc sang trang đặt phòng --}}
                             <a class="btn small secondary" href="{{ route('dat-phong.create', array_filter(['phong' => $p->MaPhong, 'ngayNhan' => $ngayNhan, 'ngayTra' => $ngayTra])) }}">
                                 Đặt ngay

@@ -26,8 +26,24 @@ class Phong extends Model
     /** Giá trị cũ, không còn chọn được trên form nhưng thống kê vẫn đếm (lỗi L1) */
     public const DANG_SU_DUNG = 'Đang sử dụng';
 
-    /** 4 trạng thái hợp lệ khi thêm/sửa phòng */
+    /** 4 trạng thái của phòng */
     public const TRANG_THAI = [self::TRONG, self::DA_DAT, self::DANG_THUE, self::BAO_TRI];
+
+    /**
+     * Trạng thái admin được chọn khi thêm/sửa phòng. "Đã đặt" / "Đang thuê" do hệ thống
+     * tự tính từ đơn đặt phòng (DatPhongService::syncRoomStatus).
+     */
+    public const TRANG_THAI_CHON_TAY = [self::TRONG, self::BAO_TRI];
+
+    /**
+     * Khoảng giá cho ô lọc phòng: mã => [nhãn, giá từ (>=), giá đến (<)]. null = không giới hạn.
+     */
+    public const KHOANG_GIA = [
+        'duoi-500k' => ['Dưới 500.000 đ', null, 500000],
+        '500k-2tr' => ['500.000 đ – 2.000.000 đ', 500000, 2000000],
+        '2tr-5tr' => ['2.000.000 đ – 5.000.000 đ', 2000000, 5000000],
+        'tren-5tr' => ['Từ 5.000.000 đ trở lên', 5000000, null],
+    ];
 
     protected $table = 'PHONG';
 
@@ -55,9 +71,9 @@ class Phong extends Model
     }
 
     /**
-     * Lọc theo mã phòng / tên loại, loại phòng, khoảng giá (PhongModel::getAll), sắp theo mã phòng.
+     * Lọc theo mã phòng / tên loại, loại phòng, khoảng giá (mã trong KHOANG_GIA), sắp theo mã phòng.
      */
-    public function scopeLoc(Builder $query, ?string $keyword = null, ?int $maLoaiPhong = null, ?int $giaTu = null, ?int $giaDen = null): void
+    public function scopeLoc(Builder $query, ?string $keyword = null, ?int $maLoaiPhong = null, ?string $khoangGia = null): void
     {
         if ($keyword !== null && trim($keyword) !== '') {
             $tuKhoa = '%'.trim($keyword).'%';
@@ -71,15 +87,33 @@ class Phong extends Model
             $query->where('MaLoaiPhong', $maLoaiPhong);
         }
 
-        if ($giaTu !== null && $giaTu > 0) {
-            $query->whereHas('loaiPhong', fn (Builder $lp) => $lp->where('GiaPhong', '>=', $giaTu));
-        }
-
-        if ($giaDen !== null && $giaDen > 0) {
-            $query->whereHas('loaiPhong', fn (Builder $lp) => $lp->where('GiaPhong', '<=', $giaDen));
+        if ($khoangGia !== null && isset(self::KHOANG_GIA[$khoangGia])) {
+            [, $giaTu, $giaDen] = self::KHOANG_GIA[$khoangGia];
+            if ($giaTu !== null) {
+                $query->whereHas('loaiPhong', fn (Builder $lp) => $lp->where('GiaPhong', '>=', $giaTu));
+            }
+            if ($giaDen !== null) {
+                $query->whereHas('loaiPhong', fn (Builder $lp) => $lp->where('GiaPhong', '<', $giaDen));
+            }
         }
 
         $query->orderBy('MaPhong');
+    }
+
+    /**
+     * Phòng thuộc loại phòng chưa bị xóa (phía khách chỉ thấy các phòng này).
+     */
+    public function scopeDangKinhDoanh(Builder $query): void
+    {
+        $query->whereHas('loaiPhong', fn (Builder $lp) => $lp->conHoatDong());
+    }
+
+    /**
+     * Phòng nhận đặt mới được không: không bảo trì và loại phòng chưa bị xóa.
+     */
+    public function nhanDatPhong(): bool
+    {
+        return $this->TrangThai !== self::BAO_TRI && $this->loaiPhong && ! $this->loaiPhong->DaXoa;
     }
 
     /**
@@ -95,8 +129,8 @@ class Phong extends Model
                 $sub->select('MaPhong')
                     ->from('CTDATPHONG')
                     ->whereNotNull('MaPhong')
-                    ->whereNotIn('TrangThai', [DatPhong::DA_HUY, DatPhong::DA_HOAN_THANH])
-                    ->where('NgayTra', '>', $ngayNhan)
+                    ->whereIn('TrangThai', DatPhong::TRANG_THAI_GIU_PHONG)
+                    ->whereRaw(DatPhong::SQL_NGAY_TRA_THUC_TE.' > ?', [today()->addDay()->toDateString(), $ngayNhan])
                     ->where('NgayNhan', '<', $ngayTra);
             });
     }
@@ -137,11 +171,12 @@ class Phong extends Model
     }
 
     /**
-     * Không cho đổi loại hoặc trạng thái khi phòng đang có lịch đặt.
+     * Không cho đổi loại phòng, hoặc bật/tắt Bảo trì, khi phòng đang có lịch đặt.
      */
     public function kiemTraDoiLoaiHoacTrangThai(int $maLoaiPhongMoi, string $trangThaiMoi): void
     {
-        $coThayDoi = $trangThaiMoi !== $this->TrangThai || $maLoaiPhongMoi !== (int) $this->MaLoaiPhong;
+        $doiBaoTri = ($trangThaiMoi === self::BAO_TRI) !== ($this->TrangThai === self::BAO_TRI);
+        $coThayDoi = $doiBaoTri || $maLoaiPhongMoi !== (int) $this->MaLoaiPhong;
 
         if ($coThayDoi && $this->coDonDangHoatDong()) {
             throw new DomainException('Phòng đang có lịch đặt; hãy xử lý đơn trước khi đổi loại hoặc trạng thái phòng.');

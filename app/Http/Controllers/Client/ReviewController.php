@@ -32,7 +32,7 @@ class ReviewController extends Controller
         $datPhong = DanhGia::donCoTheDanhGia($khach->MaKhachHang, $maPhong);
         if (! $datPhong) {
             return redirect()->route('danh-gia.index')
-                ->thongBao('danger', 'Bạn chỉ được đánh giá phòng đã đặt và đã hoàn thành ngày trả phòng.');
+                ->thongBao('danger', 'Bạn chỉ được đánh giá phòng đã ở và đã trả phòng (đơn hoàn tất).');
         }
 
         DanhGia::taoDanhGia(

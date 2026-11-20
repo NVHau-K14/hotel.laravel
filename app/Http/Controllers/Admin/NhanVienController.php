@@ -35,6 +35,7 @@ class NhanVienController extends Controller
 
     public function store(StoreNhanVienRequest $request): RedirectResponse
     {
+        $this->chiQuanLyDuocGanChucVuQuanLy($request, $request->integer('maChucVu'));
         $ten = $request->input('tenNhanVien');
 
         NhanVien::create([
@@ -67,6 +68,8 @@ class NhanVienController extends Controller
         if ($nhanVien->is($request->user('admin')) && $maChucVu !== (int) $nhanVien->MaChucVu) {
             throw new DomainException('Không được tự thay đổi chức vụ của tài khoản đang đăng nhập.');
         }
+        $this->chiQuanLyDuocSuaQuanLy($request, $nhanVien);
+        $this->chiQuanLyDuocGanChucVuQuanLy($request, $maChucVu);
 
         $duLieu = [
             'TenNhanVien' => $ten,
@@ -90,10 +93,33 @@ class NhanVienController extends Controller
         if ($nhanVien->is($request->user('admin'))) {
             throw new DomainException('Không được xóa tài khoản đang đăng nhập.');
         }
+        $this->chiQuanLyDuocSuaQuanLy($request, $nhanVien);
 
         // Nhân viên đã có đơn/hóa đơn/phân công → lỗi 1451, đổi thành câu tiếng Việt ở bootstrap/app.php
         $nhanVien->delete();
 
         return redirect()->route('admin.nhan-vien.index')->thongBao('success', 'Đã xóa nhân viên.');
+    }
+
+    /**
+     * Chống leo thang đặc quyền: nhân viên không phải Quản lý không được sửa / đặt lại mật khẩu / xóa
+     * tài khoản Quản lý.
+     */
+    private function chiQuanLyDuocSuaQuanLy(Request $request, NhanVien $nhanVien): void
+    {
+        if ($nhanVien->laQuanLy() && ! $request->user('admin')->laQuanLy()) {
+            throw new DomainException('Chỉ Quản lý mới được sửa hoặc xóa tài khoản Quản lý.');
+        }
+    }
+
+    /**
+     * Chỉ Quản lý mới được tạo tài khoản Quản lý hoặc nâng nhân viên lên Quản lý.
+     */
+    private function chiQuanLyDuocGanChucVuQuanLy(Request $request, int $maChucVu): void
+    {
+        $laChucVuQuanLy = ChucVu::whereKey($maChucVu)->value('TenChucVu') === ChucVu::QUAN_LY;
+        if ($laChucVuQuanLy && ! $request->user('admin')->laQuanLy()) {
+            throw new DomainException('Chỉ Quản lý mới được gán chức vụ Quản lý.');
+        }
     }
 }

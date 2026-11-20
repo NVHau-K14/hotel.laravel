@@ -87,32 +87,72 @@ class DatPhongService
     }
 
     /**
-     * Khách đặt phòng trên website (BookingController::create của bản gốc). Trả về mã đơn mới.
-     *  - Khách đã đăng nhập: cập nhật thông tin liên hệ của chính tài khoản đó.
-     *  - Khách vãng lai đã đặt trước đó trong phiên này (chưa có mật khẩu): dùng lại và cập nhật.
-     *  - Còn lại: tạo khách hàng mới không mật khẩu. Chỉ biết SĐT/email thì KHÔNG được dùng tài khoản có sẵn.
-     *
-     * @param  array{hoTen: string, email: ?string, dienThoai: string, diaChi: ?string, cmnd: ?string}  $thongTin
+     * Khách (đã đăng nhập) đặt phòng trên website. Trả về mã đơn mới.
+     * Thông tin liên hệ lấy từ tài khoản, KHÔNG sửa hồ sơ của khách.
+     * Có giới hạn số đêm, khoảng đặt trước và số đơn chờ duyệt để chống giữ chỗ ảo.
      */
-    public function datPhongTrucTuyen(?KhachHang $khachDangNhap, ?int $maKhachVangLai, array $thongTin, int $maPhong, string $ngayNhan, string $ngayTra): int
+    public function datPhongTrucTuyen(KhachHang $khachHang, int $maPhong, string $ngayNhan, string $ngayTra): int
     {
-        return DB::transaction(function () use ($khachDangNhap, $maKhachVangLai, $thongTin, $maPhong, $ngayNhan, $ngayTra) {
-            $this->assertAvailable($maPhong, $ngayNhan, $ngayTra);
+        $this->validateStay($ngayNhan, $ngayTra);
 
-            $khachVangLai = ! $khachDangNhap && $maKhachVangLai ? KhachHang::find($maKhachVangLai) : null;
-            if ($khachVangLai && ! empty($khachVangLai->MatKhau)) {
-                $khachVangLai = null;
+        $soDem = (int) round((strtotime($ngayTra) - strtotime($ngayNhan)) / 86400);
+        if ($soDem > DatPhong::SO_DEM_TOI_DA) {
+            throw new DomainException('Mỗi lần đặt trực tuyến tối đa '.DatPhong::SO_DEM_TOI_DA.' đêm. Vui lòng liên hệ khách sạn để đặt dài ngày.');
+        }
+        if ($ngayNhan > today()->addDays(DatPhong::SO_NGAY_DAT_TRUOC_TOI_DA)->toDateString()) {
+            throw new DomainException('Chỉ nhận đặt phòng trước tối đa '.DatPhong::SO_NGAY_DAT_TRUOC_TOI_DA.' ngày.');
+        }
+
+        return DB::transaction(function () use ($khachHang, $maPhong, $ngayNhan, $ngayTra) {
+            // Khóa dòng khách để hai lần gửi cùng lúc không vượt giới hạn số đơn chờ duyệt
+            $khach = KhachHang::whereKey($khachHang->MaKhachHang)->lockForUpdate()->first();
+            if (! $khach || $khach->biKhoa()) {
+                throw new DomainException('Khách hàng không tồn tại hoặc đã bị khóa.');
             }
 
-            $khachHang = $khachDangNhap ?? $khachVangLai;
-            if ($khachHang) {
-                $khachHang->capNhatThongTin($thongTin['hoTen'], $thongTin['email'], $thongTin['dienThoai'], $thongTin['diaChi'], $thongTin['cmnd']);
-            } else {
-                $khachHang = KhachHang::taoKhachHang($thongTin['hoTen'], $thongTin['email'], $thongTin['dienThoai'], $thongTin['diaChi'], $thongTin['cmnd']);
+            $soDonCho = DatPhong::where('MaKhachHang', $khach->MaKhachHang)
+                ->where('TrangThai', DatPhong::CHO_ADMIN_DUYET)
+                ->count();
+            if ($soDonCho >= DatPhong::SO_DON_CHO_DUYET_TOI_DA) {
+                throw new DomainException('Bạn đang có '.$soDonCho.' đơn chờ duyệt. Vui lòng chờ khách sạn xác nhận trước khi đặt thêm.');
             }
 
-            return $this->createBooking($khachHang->MaKhachHang, $maPhong, $ngayNhan, $ngayTra);
+            return $this->createBooking($khach->MaKhachHang, $maPhong, $ngayNhan, $ngayTra);
         });
+    }
+
+    /**
+     * Dọn đơn quá hạn (chạy mỗi ngày qua lịch, và khi mở dashboard / danh sách đơn / danh sách phòng):
+     *  - Đơn chờ duyệt hoặc đã xác nhận nhưng đã qua ngày trả mà khách không nhận phòng → Đã hủy
+     *    (hóa đơn chưa thanh toán đi kèm cũng bị hủy).
+     *  - Tính lại trạng thái mọi phòng (trạng thái "Đã đặt" phụ thuộc ngày hôm nay).
+     * Trả về số đơn đã hủy.
+     */
+    public function donDepQuaHan(): int
+    {
+        $homNay = today()->toDateString();
+
+        $soDon = DB::transaction(function () use ($homNay) {
+            $maDons = DatPhong::whereIn('TrangThai', [DatPhong::CHO_ADMIN_DUYET, DatPhong::DA_XAC_NHAN])
+                ->where('NgayTra', '<=', $homNay)
+                ->lockForUpdate()
+                ->pluck('MaCTDatPhong');
+
+            if ($maDons->isNotEmpty()) {
+                DatPhong::whereIn('MaCTDatPhong', $maDons)->update(['TrangThai' => DatPhong::DA_HUY]);
+                HoaDon::whereIn('MaCTDatPhong', $maDons)
+                    ->where('TrangThai', HoaDon::CHUA_THANH_TOAN)
+                    ->update(['TrangThai' => HoaDon::DA_HUY]);
+            }
+
+            return $maDons->count();
+        });
+
+        foreach (Phong::pluck('MaPhong') as $maPhong) {
+            $this->syncRoomStatus((int) $maPhong);
+        }
+
+        return $soDon;
     }
 
     /**
@@ -162,6 +202,10 @@ class DatPhongService
             if ($trangThaiMoi === DatPhong::DA_HOAN_THANH
                 && ! $datPhong->hoaDons()->where('TrangThai', HoaDon::DA_THANH_TOAN)->exists()) {
                 throw new DomainException('Cần thanh toán hóa đơn trước khi hoàn tất đơn.');
+            }
+
+            if ($trangThaiMoi === DatPhong::DA_HUY) {
+                $datPhong->hoaDons()->where('TrangThai', HoaDon::CHUA_THANH_TOAN)->update(['TrangThai' => HoaDon::DA_HUY]);
             }
 
             $datPhong->TrangThai = $trangThaiMoi;
@@ -224,7 +268,7 @@ class DatPhongService
             ->where('MaCTDatPhong', '<>', $boQuaMaDon)
             ->whereIn('TrangThai', DatPhong::TRANG_THAI_GIU_PHONG)
             ->where('NgayNhan', '<', $ngayTra)
-            ->where('NgayTra', '>', $ngayNhan)
+            ->whereRaw(DatPhong::SQL_NGAY_TRA_THUC_TE.' > ?', [today()->addDay()->toDateString(), $ngayNhan])
             ->lockForUpdate()
             ->first(['MaCTDatPhong']);
 
@@ -252,16 +296,19 @@ class DatPhongService
 
     /**
      * Tính lại trạng thái phòng từ các đơn (không đụng tới phòng đang "Bảo trì"):
-     * có đơn đang ở → "Đang thuê"; có đơn đã xác nhận chưa hết hạn → "Đã đặt"; còn lại → "Trống".
+     * có khách đang ở → "Đang thuê"; có đơn đã xác nhận đến ngày nhận (khách sắp/đang đến) → "Đã đặt";
+     * còn lại → "Trống". Đơn cho những ngày sau KHÔNG làm phòng thành "Đã đặt".
      */
     public function syncRoomStatus(int $maPhong): void
     {
+        $homNay = today()->toDateString();
         $donCuaPhong = fn () => DatPhong::where('MaPhong', $maPhong);
 
         $trangThai = match (true) {
             $donCuaPhong()->where('TrangThai', DatPhong::DANG_SU_DUNG)->exists() => Phong::DANG_THUE,
             $donCuaPhong()->where('TrangThai', DatPhong::DA_XAC_NHAN)
-                ->where('NgayTra', '>', today()->toDateString())->exists() => Phong::DA_DAT,
+                ->where('NgayNhan', '<=', $homNay)
+                ->where('NgayTra', '>', $homNay)->exists() => Phong::DA_DAT,
             default => Phong::TRONG,
         };
 

@@ -60,20 +60,38 @@ Lệnh này **xóa sạch** database rồi dựng lại từ đầu. Chạy lạ
 
 Ảnh tải lên được lưu ở `public/uploads/phong/` và `public/uploads/dichvu/`. Không cần chạy `storage:link`.
 
-## 4. Tài khoản mẫu (mật khẩu đều là `1`)
+## 4. Tài khoản mẫu
 
-**Quản trị**
+**Quản trị** (đăng nhập ở `/admin/dang-nhap`)
 
-| Tên đăng nhập | Họ tên | Chức vụ | Quyền |
-|---|---|---|---|
-| `viet` | Nguyễn Quốc Việt | Quản lý | Toàn quyền |
-| `binh` | Ngô Quốc Bình | Lễ tân | Dashboard, Đặt phòng, Chi tiết DV, Dịch vụ, Hóa đơn, Khách hàng |
-| `vung` | Hoàng Trọng Vững | Bảo vệ | Chỉ Dashboard |
-| `van` | Bùi Thị Vấn | Tạp vụ | Dashboard, Phân công |
+| Tên đăng nhập | Mật khẩu | Họ tên | Chức vụ | Quyền |
+|---|---|---|---|---|
+| `viet` | `Admin@1234` | Nguyễn Quốc Việt | Quản lý | Toàn quyền |
+| `binh` | `Nhanvien@1234` | Ngô Quốc Bình | Lễ tân | Dashboard, Đặt phòng, Chi tiết DV, Dịch vụ, Hóa đơn, Khách hàng |
+| `vung` | `Nhanvien@1234` | Hoàng Trọng Vững | Bảo vệ | Chỉ Dashboard |
+| `van` | `Nhanvien@1234` | Bùi Thị Vấn | Tạp vụ | Dashboard, Phân công |
 
-**Khách hàng:** `teo@gmail.com` (hoặc số điện thoại `0912345678`). Các khách mẫu khác: `ti@gmail.com`, `vana@gmail.com`, `thib@gmail.com`, `minhc@gmail.com`.
+**Khách hàng** (mật khẩu `Khach@1234`): `teo@gmail.com` (hoặc số điện thoại `0912345678`). Các khách mẫu khác: `ti@gmail.com`, `vana@gmail.com`, `thib@gmail.com`, `minhc@gmail.com`.
 
-Quản lý có thể đổi quyền của từng chức vụ ở trang **Chức vụ**.
+> Đây là mật khẩu demo cho môn học. Khi triển khai thật phải đổi toàn bộ.
+
+Quản lý có thể đổi quyền của từng chức vụ ở trang **Chức vụ**. Chỉ Quản lý mới được tạo, sửa, xóa hoặc đặt lại mật khẩu tài khoản Quản lý.
+
+**Quy tắc tài khoản**
+
+- Mật khẩu (khách và nhân viên): tối thiểu 8 ký tự, có chữ hoa, chữ thường và chữ số; không chứa tên đăng nhập, số điện thoại hoặc email.
+- Số điện thoại: số di động Việt Nam 10 số (`03x`, `05x`, `07x`, `08x`, `09x`). Nhập `+84`, có khoảng trắng hay dấu chấm đều được tự chuẩn hóa về dạng `0xxxxxxxxx`.
+- Tên đăng nhập nhân viên: 3–20 ký tự, chỉ chữ thường không dấu, chữ số và `_`.
+- Đăng nhập sai 5 lần (theo tài khoản + IP) bị khóa tạm 1 phút, áp dụng cho cả trang khách và trang quản trị.
+
+**Đặt phòng**
+
+- Phải đăng nhập mới đặt được phòng. Khách chưa có tài khoản thì đăng ký; không đăng nhập thì chỉ xem được phòng, dịch vụ, đánh giá. Lễ tân vẫn tạo đơn ở trang quản trị cho khách đến quầy.
+- Thông tin liên hệ trên đơn lấy từ hồ sơ tài khoản (sửa ở **Tài khoản → Sửa thông tin**).
+- Khách từng đặt phòng mà chưa có mật khẩu (dữ liệu cũ) chỉ cần đăng ký bằng đúng số điện thoại cũ là nhận lại lịch sử đặt phòng.
+- Giới hạn khi đặt trực tuyến: tối đa 30 đêm mỗi đơn, đặt trước tối đa 365 ngày, tối đa 3 đơn chờ duyệt cùng lúc.
+- Đơn chờ duyệt hoặc đã xác nhận mà quá ngày trả chưa nhận phòng thì tự hủy (lệnh `php artisan dat-phong:don-dep`, chạy theo lịch hằng ngày và mỗi khi mở dashboard, danh sách đơn hoặc danh sách phòng).
+- Khách ở quá ngày trả: hóa đơn tính thêm các đêm ở thêm, và phòng không nhận đơn mới cho tới khi khách trả phòng.
 
 ## 5. Chạy test
 
@@ -98,7 +116,8 @@ php artisan test
   5. thanh toán → đơn hoàn tất;
   6. đặt trùng ngày → bị chặn.
 - `tests/Feature/PhanQuyenTest.php` — `vung` vào `/admin/phong` bị **403**, menu theo quyền, chuyển hướng khi chưa đăng nhập.
-- `tests/Feature/DatPhongKhachTest.php` — kiểm tra dữ liệu và quy tắc khi khách đặt phòng, khách vãng lai.
+- `tests/Feature/DatPhongKhachTest.php` — bắt buộc đăng nhập khi đặt phòng, kiểm tra dữ liệu và giới hạn khi khách đặt phòng, lọc theo khoảng giá.
+- `tests/Feature/SuaLoiKiemThuTest.php` — các lỗi trong `docs/BAO_CAO_KIEM_THU.md` sau khi sửa (phân quyền, mật khẩu, đăng nhập sai, hóa đơn, trả phòng muộn…).
 - `tests/Unit/HelperTest.php` — định dạng tiền, ngày.
 
 ## 6. Cấu trúc thư mục chính
@@ -117,7 +136,7 @@ app/
 bootstrap/app.php         Đăng ký route admin, middleware, chuyển hướng khi chưa đăng nhập, xử lý lỗi tập trung
 config/auth.php           2 guard: admin (NhanVien) và web (KhachHang)
 database/migrations/      13 bảng nghiệp vụ + sessions, cache, jobs
-database/seeders/         Dữ liệu mẫu y hệt file SQL gốc (mật khẩu đã băm bcrypt)
+database/seeders/         Dữ liệu mẫu theo file SQL gốc, ngày tính theo hôm nay (mật khẩu đã băm bcrypt)
 resources/views/
   admin/                  Layout + view từng module quản trị
   client/                 Layout + view trang khách hàng

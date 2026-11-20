@@ -12,7 +12,7 @@
 
     <div class="card border-0 shadow-sm p-4 p-md-5" style="border-radius: 12px;">
         <h2 class="fw-bold mb-1 text-center">Yêu cầu đặt phòng</h2>
-        <p class="text-muted text-center mb-4">Điền thông tin của bạn để khách sạn giữ phòng và liên hệ xác nhận</p>
+        <p class="text-muted text-center mb-4">Chọn ngày lưu trú, khách sạn sẽ liên hệ theo thông tin tài khoản để xác nhận</p>
 
         @if ($errors->any())
             <div class="alert alert-danger mb-4">{{ $errors->first() }}</div>
@@ -29,53 +29,45 @@
             </div>
         </div>
 
+        @if (! $room->nhanDatPhong())
+            <div class="alert alert-warning mb-0">
+                Phòng này đang bảo trì hoặc tạm ngừng nhận khách. Vui lòng
+                <a href="{{ route('phong.index') }}">chọn phòng khác</a>.
+            </div>
+        @else
         <form method="POST" action="{{ route('dat-phong.store', $room) }}">
             @csrf
 
             <h5 class="fw-bold text-primary mb-3">1. Thời gian lưu trú</h5>
-            <div class="row g-3 mb-4">
+            <div class="row g-3 mb-2">
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Ngày nhận phòng <span class="text-danger">*</span></label>
-                    <input type="date" name="ngayNhan" class="form-control" value="{{ old('ngayNhan', $ngayNhan) }}" required>
+                    <input type="date" name="ngayNhan" class="form-control" value="{{ old('ngayNhan', $ngayNhan) }}"
+                           min="{{ today()->toDateString() }}" max="{{ today()->addDays(\App\Models\DatPhong::SO_NGAY_DAT_TRUOC_TOI_DA)->toDateString() }}" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Ngày trả phòng <span class="text-danger">*</span></label>
-                    <input type="date" name="ngayTra" class="form-control" value="{{ old('ngayTra', $ngayTra) }}" required>
+                    <input type="date" name="ngayTra" class="form-control" value="{{ old('ngayTra', $ngayTra) }}"
+                           min="{{ today()->addDay()->toDateString() }}" required>
                 </div>
             </div>
+            <p class="small text-muted mb-4">
+                Đặt trực tuyến tối đa {{ \App\Models\DatPhong::SO_DEM_TOI_DA }} đêm mỗi đơn và
+                {{ \App\Models\DatPhong::SO_DON_CHO_DUYET_TOI_DA }} đơn đang chờ duyệt cùng lúc.
+            </p>
 
-            {{-- Khách đã đăng nhập: điền sẵn thông tin tài khoản --}}
+            {{-- Thông tin liên hệ lấy từ tài khoản, không sửa ở đây (sửa ở trang hồ sơ) --}}
             <h5 class="fw-bold text-primary mb-3">2. Thông tin khách đặt</h5>
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
-                    <input type="text" name="hoTen" class="form-control" placeholder="Nguyễn Văn A"
-                           value="{{ old('hoTen', $clientUser?->HoTen) }}" required>
+            <div class="card border p-3 mb-4">
+                <div class="row g-2 small">
+                    <div class="col-sm-6"><span class="text-muted">Họ và tên:</span> <strong>{{ $clientUser->HoTen }}</strong></div>
+                    <div class="col-sm-6"><span class="text-muted">Số điện thoại:</span> <strong>{{ $clientUser->DienThoai }}</strong></div>
+                    <div class="col-sm-6"><span class="text-muted">Email:</span> <strong>{{ $clientUser->Email ?: 'Chưa cập nhật' }}</strong></div>
+                    <div class="col-sm-6"><span class="text-muted">CMND/CCCD:</span> <strong>{{ $clientUser->CMND ?: 'Chưa cập nhật' }}</strong></div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
-                    <input type="tel" name="dienThoai" class="form-control" placeholder="0901234567"
-                           value="{{ old('dienThoai', $clientUser?->DienThoai) }}" required>
+                <div class="mt-2 small">
+                    Thông tin chưa đúng? <a href="{{ route('tai-khoan.sua') }}">Cập nhật hồ sơ</a> trước khi đặt.
                 </div>
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="email@example.com"
-                           value="{{ old('email', $clientUser?->Email) }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">CMND / Căn cước công dân</label>
-                    <input type="text" name="cmnd" class="form-control" placeholder="Số CCCD"
-                           value="{{ old('cmnd', $clientUser?->CMND) }}">
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label fw-semibold">Địa chỉ</label>
-                <input type="text" name="diaChi" class="form-control" placeholder="Thành phố / Tỉnh"
-                       value="{{ old('diaChi', $clientUser?->DiaChi) }}">
             </div>
 
             <button type="submit" class="btn btn-primary booking-submit w-100 py-3 fs-5 fw-bold shadow-sm">
@@ -83,6 +75,7 @@
                 <span>Xác nhận gửi yêu cầu đặt phòng</span>
             </button>
         </form>
+        @endif
     </div>
 </main>
 @endsection

@@ -7,16 +7,35 @@ use Illuminate\Support\Facades\DB;
 
 class DatPhongSeeder extends Seeder
 {
+    /**
+     * Bảng CTDATPHONG. Ngày tính theo hôm nay để dữ liệu mẫu luôn dùng được cho demo,
+     * mỗi đơn ở một trạng thái của luồng nghiệp vụ:
+     *  #1, #2 đã hoàn tất (đã thanh toán, có đánh giá) · #3 khách đang ở · #4 đến nhận phòng hôm nay
+     *  · #5 chờ admin duyệt.
+     */
     public function run(): void
     {
-        // Bảng CTDATPHONG. GiaPhongDat để NULL như file SQL (khi hiển thị lấy giá của loại phòng);
-        // payment_status để mặc định 'CHUA_TAO'.
+        $ngay = fn (int $soNgay) => today()->addDays($soNgay)->toDateString();
+
+        $don = fn (int $ma, int $khach, int $phong, int $nhan, int $tra, string $trangThai, int $gia, int $thucHien, ?string $thanhToan = null) => [
+            'MaCTDatPhong' => $ma,
+            'NgayThucHien' => $ngay($thucHien),
+            'MaKhachHang' => $khach,
+            'NgayNhan' => $ngay($nhan),
+            'NgayTra' => $ngay($tra),
+            'MaPhong' => $phong,
+            'MaNhanVien' => $trangThai === 'CHO_ADMIN_DUYET' ? null : 2,
+            'TrangThai' => $trangThai,
+            'GiaPhongDat' => $gia,
+            'payment_status' => $thanhToan ?? 'CHUA_TAO',
+        ];
+
         DB::table('CTDATPHONG')->insert([
-            ['MaCTDatPhong' => 1, 'NgayThucHien' => '2026-05-01', 'MaKhachHang' => 1, 'NgayNhan' => '2026-05-05', 'NgayTra' => '2026-05-07', 'MaPhong' => 101, 'MaNhanVien' => 2, 'TrangThai' => 'DA_XAC_NHAN'],
-            ['MaCTDatPhong' => 2, 'NgayThucHien' => '2026-05-01', 'MaKhachHang' => 2, 'NgayNhan' => '2026-05-06', 'NgayTra' => '2026-05-08', 'MaPhong' => 102, 'MaNhanVien' => 2, 'TrangThai' => 'DA_XAC_NHAN'],
-            ['MaCTDatPhong' => 3, 'NgayThucHien' => '2026-05-02', 'MaKhachHang' => 3, 'NgayNhan' => '2026-05-08', 'NgayTra' => '2026-05-10', 'MaPhong' => 201, 'MaNhanVien' => 2, 'TrangThai' => 'DA_XAC_NHAN'],
-            ['MaCTDatPhong' => 4, 'NgayThucHien' => '2026-05-03', 'MaKhachHang' => 4, 'NgayNhan' => '2026-05-08', 'NgayTra' => '2026-05-10', 'MaPhong' => 103, 'MaNhanVien' => 2, 'TrangThai' => 'DA_XAC_NHAN'],
-            ['MaCTDatPhong' => 5, 'NgayThucHien' => '2026-05-04', 'MaKhachHang' => 5, 'NgayNhan' => '2026-05-11', 'NgayTra' => '2026-05-13', 'MaPhong' => 201, 'MaNhanVien' => 2, 'TrangThai' => 'DA_XAC_NHAN'],
+            $don(1, 1, 101, -10, -8, 'DA_HOAN_THANH', 300000, -15, 'DA_THANH_TOAN'),
+            $don(2, 2, 102, -6, -4, 'DA_HOAN_THANH', 300000, -12, 'DA_THANH_TOAN'),
+            $don(3, 3, 201, -1, 1, 'DANG_SU_DUNG', 5000000, -5),
+            $don(4, 4, 103, 0, 2, 'DA_XAC_NHAN', 300000, -3),
+            $don(5, 5, 202, 3, 5, 'CHO_ADMIN_DUYET', 5000000, -1),
         ]);
     }
 }

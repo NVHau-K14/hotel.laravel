@@ -18,7 +18,6 @@ class CtDichVuRequest extends FormRequest
             'maCTDatPhong' => ['required', 'integer', 'min:1'],
             'maDichVu' => ['required', 'integer', 'min:1'],
             'soLuong' => ['required', 'integer', 'min:1'],
-            'maCTDichVu' => ['nullable', 'integer', 'min:1'],
         ];
     }
 

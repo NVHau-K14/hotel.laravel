@@ -16,7 +16,7 @@ class HomeController extends Controller
     {
         return view('client.home', [
             // 6 phòng đầu theo mã phòng + tất cả dịch vụ (như bản gốc)
-            'phongs' => Phong::with('loaiPhong')->orderBy('MaPhong')->limit(6)->get(),
+            'phongs' => Phong::with('loaiPhong')->dangKinhDoanh()->orderBy('MaPhong')->limit(6)->get(),
             'dichVus' => DichVu::orderBy('MaDichVu')->get(),
         ]);
     }

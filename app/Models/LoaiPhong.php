@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use DomainException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -41,10 +42,24 @@ class LoaiPhong extends Model
     }
 
     /**
+     * Khôi phục loại phòng đã xóa mềm.
+     */
+    public function khoiPhuc(): void
+    {
+        $this->update(['DaXoa' => false]);
+    }
+
+    /**
      * Xóa loại phòng: còn phòng dùng loại này thì chỉ đánh dấu DaXoa, không có thì xóa hẳn.
      */
     public function xoaHoacAn(): void
     {
+        // Còn đơn chờ duyệt / đã xác nhận / đang ở thì xóa sẽ làm khách không nhận phòng được
+        $coDonDangHoatDong = $this->phongs->contains(fn (Phong $phong) => $phong->coDonDangHoatDong());
+        if ($coDonDangHoatDong) {
+            throw new DomainException('Loại phòng này còn phòng đang có lịch đặt. Hãy xử lý hết các đơn trước khi xóa.');
+        }
+
         if ($this->phongs()->exists()) {
             $this->update(['DaXoa' => true]);
 

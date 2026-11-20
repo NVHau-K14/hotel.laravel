@@ -19,7 +19,6 @@ class DichVuRequest extends FormRequest
         return [
             'tenDichVu' => ['required', 'string', 'max:50'],
             'giaDichVu' => ['required', 'integer', 'min:1', 'max:2147483647'],
-            'hinhAnh' => ['nullable', 'string'],
             ...$this->rulesAnh(),
         ];
     }

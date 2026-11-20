@@ -31,6 +31,8 @@ class DatPhongController extends Controller
 
     public function index(Request $request): View
     {
+        $this->datPhongService->donDepQuaHan();
+
         $trangThai = $request->input('trangThai');
         $keyword = $request->input('keyword');
 

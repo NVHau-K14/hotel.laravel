@@ -24,8 +24,7 @@ class StorePhongRequest extends FormRequest
             'maPhong' => ['required', 'integer', 'min:1', 'max:2147483647', Rule::unique('PHONG', 'MaPhong')],
             'maLoaiPhong' => ['required', 'integer', 'min:1', self::loaiPhongConHoatDong()],
             // Không gửi ô trạng thái thì mặc định "Trống"
-            'trangThai' => ['sometimes', 'required', Rule::in(Phong::TRANG_THAI)],
-            'hinhAnh' => ['nullable', 'string'],
+            'trangThai' => ['sometimes', 'required', Rule::in(Phong::TRANG_THAI_CHON_TAY)],
             ...$this->rulesAnh(),
         ];
     }
@@ -62,7 +61,7 @@ class StorePhongRequest extends FormRequest
     {
         return [
             'trangThai.required' => 'Trạng thái phòng không hợp lệ.',
-            'trangThai.in' => 'Trạng thái phòng không hợp lệ.',
+            'trangThai.in' => 'Chỉ chọn được trạng thái Trống hoặc Bảo trì. "Đã đặt" / "Đang thuê" do hệ thống tự cập nhật theo đơn đặt phòng.',
             'maLoaiPhong.exists' => 'Loại phòng không tồn tại hoặc đã ngừng sử dụng.',
         ];
     }

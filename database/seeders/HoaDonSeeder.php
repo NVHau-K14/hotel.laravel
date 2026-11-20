@@ -7,15 +7,33 @@ use Illuminate\Support\Facades\DB;
 
 class HoaDonSeeder extends Seeder
 {
+    /**
+     * Mỗi đơn đã hoàn tất có đúng một hóa đơn đã thanh toán (2 đêm × 300.000 đ), kèm bản chụp ChiTietJSON.
+     * Đơn đang ở / chưa nhận phòng chưa có hóa đơn (lập khi trả phòng).
+     */
     public function run(): void
     {
-        // Giữ y nguyên dữ liệu mẫu: đơn #2 và #3 mỗi đơn có 2 hóa đơn, tất cả CHUA_THANH_TOAN (mặc định).
+        $hoaDon = fn (int $ma, int $maDon, int $ngayThu) => [
+            'MaHoaDon' => $ma,
+            'NgayThuTien' => today()->addDays($ngayThu)->toDateString(),
+            'SoTienThu' => 600000,
+            'MaCTDatPhong' => $maDon,
+            'MaNhanVien' => 2,
+            'TrangThai' => 'DA_THANH_TOAN',
+            'ChiTietJSON' => json_encode([
+                'days' => 2,
+                'lateNights' => 0,
+                'roomRate' => 300000,
+                'roomTotal' => 600000,
+                'services' => [],
+                'serviceTotal' => 0,
+                'grandTotal' => 600000,
+            ], JSON_UNESCAPED_UNICODE),
+        ];
+
         DB::table('HOADON')->insert([
-            ['MaHoaDon' => 1, 'NgayThuTien' => '2026-05-07', 'SoTienThu' => 150000, 'MaCTDatPhong' => 2, 'MaNhanVien' => 2],
-            ['MaHoaDon' => 2, 'NgayThuTien' => '2026-05-08', 'SoTienThu' => 200000, 'MaCTDatPhong' => 2, 'MaNhanVien' => 2],
-            ['MaHoaDon' => 3, 'NgayThuTien' => '2026-05-10', 'SoTienThu' => 3000000, 'MaCTDatPhong' => 3, 'MaNhanVien' => 2],
-            ['MaHoaDon' => 4, 'NgayThuTien' => '2026-05-10', 'SoTienThu' => 350000, 'MaCTDatPhong' => 3, 'MaNhanVien' => 2],
-            ['MaHoaDon' => 5, 'NgayThuTien' => '2026-05-13', 'SoTienThu' => 350000, 'MaCTDatPhong' => 5, 'MaNhanVien' => 2],
+            $hoaDon(1, 1, -8),
+            $hoaDon(2, 2, -4),
         ]);
     }
 }

@@ -38,9 +38,9 @@
                 </div>
 
                 <div class="mt-4 pt-3 border-top">
-                    @if ($room->TrangThai !== \App\Models\Phong::BAO_TRI)
+                    @if ($room->nhanDatPhong())
                         <a href="{{ route('dat-phong.create', $room) }}" class="btn btn-primary w-100 py-2 fs-6 fw-bold">
-                            <i class="fa-solid fa-calendar-check me-2"></i>Đặt phòng này ngay
+                            <i class="fa-solid fa-calendar-check me-2"></i>{{ auth('web')->check() ? 'Đặt phòng này ngay' : 'Đăng nhập để đặt phòng' }}
                         </a>
                     @else
                         <button class="btn btn-secondary w-100 py-2" disabled>Phòng đang bảo trì</button>

@@ -44,13 +44,13 @@
                 </div>
 
                 <div class="form-row">
-                    <label>Giá từ</label>
-                    <input type="number" name="giaTu" placeholder="300000" value="{{ $giaTu }}">
-                </div>
-
-                <div class="form-row">
-                    <label>Giá đến</label>
-                    <input type="number" name="giaDen" placeholder="4000000" value="{{ $giaDen }}">
+                    <label>Khoảng giá</label>
+                    <select name="khoangGia">
+                        <option value="">Tất cả mức giá</option>
+                        @foreach (\App\Models\Phong::KHOANG_GIA as $ma => [$nhan])
+                            <option value="{{ $ma }}" @selected($khoangGia === $ma)>{{ $nhan }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="form-row">

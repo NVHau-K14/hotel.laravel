@@ -17,25 +17,35 @@ use Illuminate\View\View;
  */
 class PhongController extends Controller
 {
+    public function __construct(private DatPhongService $datPhongService) {}
+
     public function index(Request $request): View
     {
+        // Trạng thái "Đã đặt" phụ thuộc ngày hôm nay → tính lại trước khi hiển thị
+        $this->datPhongService->donDepQuaHan();
+
         $keyword = $request->input('keyword');
         $maLoaiPhong = $request->filled('maLoaiPhong') ? $request->integer('maLoaiPhong') : null;
-        $giaTu = $request->filled('giaTu') ? $request->integer('giaTu') : null;
-        $giaDen = $request->filled('giaDen') ? $request->integer('giaDen') : null;
+        // Khoảng giá chọn từ danh sách cố định (Phong::KHOANG_GIA); giá trị lạ thì bỏ qua
+        $khoangGia = array_key_exists((string) $request->input('khoangGia'), Phong::KHOANG_GIA) ? $request->input('khoangGia') : null;
         $ngayNhan = $request->input('ngayNhan');
         $ngayTra = $request->input('ngayTra');
 
-        // Lọc theo ngày cần đủ cả hai ngày hợp lệ, ngày trả sau ngày nhận; sai thì bỏ lọc ngày và báo lỗi
+        // Lọc theo ngày cần đủ cả hai ngày hợp lệ, không ở quá khứ, ngày trả sau ngày nhận; sai thì bỏ lọc ngày và báo lỗi
         $dateError = '';
-        if (($ngayNhan || $ngayTra)
-            && (! DatPhongService::ngayHopLe($ngayNhan) || ! DatPhongService::ngayHopLe($ngayTra) || $ngayNhan >= $ngayTra)) {
-            $dateError = 'Vui lòng chọn đủ ngày nhận/trả hợp lệ; ngày trả phải sau ngày nhận.';
-            $ngayNhan = null;
-            $ngayTra = null;
+        if ($ngayNhan || $ngayTra) {
+            if (! DatPhongService::ngayHopLe($ngayNhan) || ! DatPhongService::ngayHopLe($ngayTra) || $ngayNhan >= $ngayTra) {
+                $dateError = 'Vui lòng chọn đủ ngày nhận/trả hợp lệ; ngày trả phải sau ngày nhận.';
+            } elseif ($ngayNhan < today()->toDateString()) {
+                $dateError = 'Ngày nhận phòng không được nằm trong quá khứ.';
+            }
+            if ($dateError) {
+                $ngayNhan = null;
+                $ngayTra = null;
+            }
         }
 
-        $query = Phong::with('loaiPhong')->loc($keyword, $maLoaiPhong, $giaTu, $giaDen);
+        $query = Phong::with('loaiPhong')->loc($keyword, $maLoaiPhong, $khoangGia);
         if ($ngayNhan && $ngayTra) {
             $query->conTrong($ngayNhan, $ngayTra);
         }
@@ -46,8 +56,7 @@ class PhongController extends Controller
             'loaiPhongs' => LoaiPhong::conHoatDong()->orderBy('MaLoaiPhong')->get(),
             'keyword' => $keyword,
             'maLoaiPhong' => $maLoaiPhong,
-            'giaTu' => $giaTu,
-            'giaDen' => $giaDen,
+            'khoangGia' => $khoangGia,
             'ngayNhan' => $ngayNhan,
             'ngayTra' => $ngayTra,
             'dateError' => $dateError,
@@ -71,6 +80,7 @@ class PhongController extends Controller
         Phong::create([
             'MaPhong' => $maPhong,
             'MaLoaiPhong' => $request->integer('maLoaiPhong'),
+            // Chỉ "Trống" hoặc "Bảo trì" (StorePhongRequest)
             'TrangThai' => $request->input('trangThai', Phong::TRONG),
             'HinhAnhDaiDien' => $hinhAnh ?: null,
         ]);
@@ -94,11 +104,13 @@ class PhongController extends Controller
         // Phòng đang có lịch đặt thì không được đổi loại hoặc trạng thái (kiểm tra trước khi lưu ảnh)
         $phong->kiemTraDoiLoaiHoacTrangThai($maLoaiPhong, $trangThai);
 
+        // Phòng đang "Đã đặt"/"Đang thuê" mà admin để "Trống" thì giữ nguyên, hệ thống tự tính lại bên dưới
         $phong->update([
             'MaLoaiPhong' => $maLoaiPhong,
             'TrangThai' => $trangThai,
             'HinhAnhDaiDien' => $this->luuAnhTaiLen($request, 'fileAnh', 'phong') ?? $request->input('hinhAnh'),
         ]);
+        $this->datPhongService->syncRoomStatus($phong->MaPhong);
 
         return redirect()->route('admin.phong.index')->thongBao('success', "Cập nhật thông tin phòng {$phong->MaPhong} thành công!");
     }

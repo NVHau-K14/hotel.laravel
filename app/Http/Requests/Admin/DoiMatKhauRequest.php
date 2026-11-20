@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\MatKhauManh;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -17,7 +18,7 @@ class DoiMatKhauRequest extends FormRequest
         return [
             // current_password:admin so với mật khẩu của nhân viên đang đăng nhập (guard admin)
             'matKhauCu' => ['required', 'string', 'current_password:admin'],
-            'matKhauMoi' => ['required', 'string'],
+            'matKhauMoi' => ['required', 'string', new MatKhauManh([$this->user('admin')?->Username])],
             'xacNhanMatKhau' => ['bail', 'required', 'string', 'same:matKhauMoi', 'different:matKhauCu'],
         ];
     }

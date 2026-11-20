@@ -42,7 +42,6 @@ class CtDichVuController extends Controller
             $request->integer('maDichVu'),
             $request->integer('maCTDatPhong'),
             $request->integer('soLuong'),
-            $request->integer('maCTDichVu') ?: null,
         );
 
         return redirect()->route('admin.ct-dich-vu.index')->thongBao('success', 'Thêm chi tiết dịch vụ thành công!');

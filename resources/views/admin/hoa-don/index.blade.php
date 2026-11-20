@@ -45,6 +45,8 @@
                             <td>
                                 @if ($item->daThanhToan())
                                     <span class="badge bg-success">Đã thanh toán</span>
+                                @elseif ($item->daHuy())
+                                    <span class="badge bg-secondary">Đã hủy</span>
                                 @else
                                     <span class="badge bg-warning text-dark">Chưa thanh toán</span>
                                 @endif

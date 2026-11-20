@@ -50,5 +50,31 @@
             </tbody>
         </table>
     </div>
+
+    @if ($daXoa->isNotEmpty())
+        <div class="card admin-card border-0 shadow-sm p-4 mt-4">
+            <h5 class="fw-bold mb-1">Loại phòng đã ngừng sử dụng</h5>
+            <p class="text-muted small mb-3">Các phòng thuộc những loại này không hiện ở trang khách và không nhận đặt mới.</p>
+            <table class="table admin-table align-middle mb-0">
+                <tbody>
+                    @foreach ($daXoa as $item)
+                        <tr>
+                            <td style="width: 80px;"><span class="id-badge">{{ $item->MaLoaiPhong }}</span></td>
+                            <td class="fw-bold">{{ $item->TenLoaiPhong }}</td>
+                            <td>{{ format_currency($item->GiaPhong) }}</td>
+                            <td class="text-end">
+                                <form method="POST" action="{{ route('admin.loai-phong.khoi-phuc', $item) }}" class="action-form">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                        <i class="fa-solid fa-rotate-left me-1"></i>Khôi phục
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 </div>
 @endsection

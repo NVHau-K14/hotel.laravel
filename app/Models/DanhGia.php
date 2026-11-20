@@ -97,7 +97,7 @@ class DanhGia extends Model
     }
 
     /**
-     * Phòng khách được phép đánh giá: có đơn hoàn tất, đã qua ngày trả, đơn chưa có đánh giá
+     * Phòng khách được phép đánh giá: có đơn hoàn tất, đơn chưa có đánh giá
      * (DanhGiaModel::getReviewableRoomsByCustomer).
      */
     public static function phongCoTheDanhGia(int $maKhachHang): Collection
@@ -122,8 +122,8 @@ class DanhGia extends Model
 
     private static function locDonCoTheDanhGia(Builder $query, int $maKhachHang): void
     {
+        // Đơn đã hoàn tất (đã trả phòng, thanh toán) là đủ — kể cả khi khách trả phòng sớm
         $query->where('MaKhachHang', $maKhachHang)
-            ->where('NgayTra', '<=', today()->toDateString())
             ->where('TrangThai', DatPhong::DA_HOAN_THANH)
             ->whereDoesntHave('danhGias');
     }

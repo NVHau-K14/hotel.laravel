@@ -141,34 +141,29 @@ class KichBanNghiemThuTest extends TestCase
             ->assertSee('1.260.000 đ');
     }
 
-    public function test_khach_vang_lai_dat_trung_ngay_cung_bi_chan(): void
+    public function test_hai_khach_dat_trung_ngay_bi_chan(): void
     {
         $ngayNhan = today()->addDays(10)->toDateString();
         $ngayTra = today()->addDays(12)->toDateString();
-        $khach = ['hoTen' => 'Khách Vãng Lai', 'dienThoai' => '0901111222'];
+        $ti = KhachHang::where('Email', 'ti@gmail.com')->firstOrFail();
 
-        // Lần đầu: khách vãng lai đặt được, tạo khách mới không mật khẩu
-        $this->post(route('dat-phong.store', 104), ['ngayNhan' => $ngayNhan, 'ngayTra' => $ngayTra] + $khach)
+        $this->actingAs($this->teo, 'web')
+            ->post(route('dat-phong.store', 104), ['ngayNhan' => $ngayNhan, 'ngayTra' => $ngayTra])
             ->assertSessionHasNoErrors();
-        $khachMoi = KhachHang::where('DienThoai', '0901111222')->firstOrFail();
-        $this->assertNull($khachMoi->MatKhau);
 
-        // Khách khác đặt chồng một phần khoảng ngày → bị chặn, không tạo thêm khách
-        $soKhach = KhachHang::count();
-        $this->post(route('dat-phong.store', 104), [
-            'ngayNhan' => today()->addDays(11)->toDateString(),
-            'ngayTra' => today()->addDays(13)->toDateString(),
-            'hoTen' => 'Người Khác',
-            'dienThoai' => '0903333444',
-        ])->assertSessionHasErrors(['datPhong' => 'Phòng đã có lịch đặt trong khoảng ngày này. Vui lòng chọn ngày hoặc phòng khác.']);
-        $this->assertSame($soKhach, KhachHang::count());
+        // Khách khác đặt chồng một phần khoảng ngày → bị chặn
+        $soDon = DatPhong::count();
+        $this->actingAs($ti, 'web')
+            ->post(route('dat-phong.store', 104), [
+                'ngayNhan' => today()->addDays(11)->toDateString(),
+                'ngayTra' => today()->addDays(13)->toDateString(),
+            ])->assertSessionHasErrors(['datPhong' => 'Phòng đã có lịch đặt trong khoảng ngày này. Vui lòng chọn ngày hoặc phòng khác.']);
+        $this->assertSame($soDon, DatPhong::count());
 
         // Ngày trả của đơn trước = ngày nhận của đơn sau → không trùng
         $this->post(route('dat-phong.store', 104), [
             'ngayNhan' => $ngayTra,
             'ngayTra' => today()->addDays(13)->toDateString(),
-            'hoTen' => 'Người Khác',
-            'dienThoai' => '0903333444',
         ])->assertSessionHasNoErrors();
     }
 

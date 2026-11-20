@@ -38,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         // Không cắt khoảng trắng ở các ô mật khẩu (bản gốc không trim mật khẩu)
-        $middleware->trimStrings(except: ['matKhauCu', 'matKhauMoi', 'xacNhanMatKhau']);
+        $middleware->trimStrings(except: ['password', 'password_confirmation', 'matKhauCu', 'matKhauMoi', 'xacNhanMatKhau']);
 
         // Chưa đăng nhập: /admin/... về trang đăng nhập admin, còn lại về trang đăng nhập khách
         $middleware->redirectGuestsTo(function (Request $request) {
@@ -48,14 +48,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 return route('admin.dang-nhap');
             }
 
-            session()->flash('flash', ['type' => 'warning', 'message' => 'Vui lòng đăng nhập tài khoản khách hàng để tiếp tục.']);
+            $thongBao = $request->routeIs('dat-phong.*')
+                ? 'Vui lòng đăng nhập để đặt phòng. Chưa có tài khoản? Hãy đăng ký miễn phí.'
+                : 'Vui lòng đăng nhập tài khoản khách hàng để tiếp tục.';
+            session()->flash('flash', ['type' => 'warning', 'message' => $thongBao]);
 
             return route('tai-khoan.dang-nhap');
         });
 
         // Đã đăng nhập mà vào trang đăng nhập/đăng ký
         $middleware->redirectUsersTo(fn (Request $request) => match (true) {
-            $request->is('admin', 'admin/*') => route('admin.dashboard'),
+            $request->is('admin', 'admin/*') => $request->user('admin')?->trangDauTien() ?? route('admin.dashboard'),
             $request->routeIs('tai-khoan.dang-ky*') => route('trang-chu'),
             default => route('tai-khoan.lich-su'),
         });
@@ -67,6 +70,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Lỗi nghiệp vụ là thông báo cho người dùng, không cần ghi log
         $exceptions->dontReport([DomainException::class]);
+        // Lỗi khóa ngoại / trùng dữ liệu đã đổi thành thông báo tiếng Việt bên dưới → không ghi log
+        $exceptions->dontReportWhen(fn (Throwable $e) => $e instanceof QueryException
+            && in_array($e->errorInfo[1] ?? null, [1451, 1062], true));
 
         // Gửi form lỗi → quay lại form kèm dữ liệu cũ và thông báo; xem trang lỗi (GET) → trang 422
         $traVeLoi = function (Request $request, string $thongBao) {

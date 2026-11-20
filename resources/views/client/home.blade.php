@@ -38,7 +38,7 @@
                         <strong class="text-primary fs-5">{{ format_currency($p->loaiPhong?->GiaPhong) }} / đêm</strong>
                         <div class="card-actions mt-3">
                             <a class="btn small" href="{{ route('phong.show', $p) }}">Chi tiết</a>
-                            @if ($p->TrangThai !== \App\Models\Phong::BAO_TRI)
+                            @if ($p->nhanDatPhong())
                                 <a class="btn small secondary" href="{{ route('dat-phong.create', $p) }}">Đặt phòng</a>
                             @else
                                 <span class="btn small secondary disabled" style="opacity: 0.6;">Bảo trì</span>

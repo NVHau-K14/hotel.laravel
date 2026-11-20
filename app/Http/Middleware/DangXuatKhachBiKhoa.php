@@ -19,7 +19,6 @@ class DangXuatKhachBiKhoa
 
         if ($khachHang && $khachHang->biKhoa()) {
             Auth::guard('web')->logout();
-            $request->session()->forget(['guest_booking_ids', 'guest_customer_id']);
         }
 
         return $next($request);

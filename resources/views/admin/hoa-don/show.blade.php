@@ -17,14 +17,14 @@
             <button onclick="window.print()" class="btn btn-outline-primary">
                 <i class="fa-solid fa-print me-1"></i> In hóa đơn
             </button>
-            @unless ($item->daThanhToan())
+            @if ($item->thanhToanDuoc())
                 <form method="POST" action="{{ route('admin.hoa-don.thanh-toan', $item) }}" class="action-form" onsubmit="return confirm('Xác nhận khách đã thanh toán số tiền này?')">
                     @csrf
                     <button type="submit" class="btn btn-success">
                         <i class="fa-solid fa-check-double me-1"></i> Xác nhận thanh toán
                     </button>
                 </form>
-            @endunless
+            @endif
         </div>
     </div>
 
@@ -55,7 +55,7 @@
                 <h6 class="fw-bold text-muted text-uppercase mb-2">Chi tiết lưu trú</h6>
                 <p class="mb-1">Phòng: <strong>Phòng {{ $datPhong?->MaPhong }}</strong> ({{ $tenLoaiPhong }})</p>
                 <p class="mb-1 small">Ngày nhận: {{ format_date($datPhong?->NgayNhan) }}</p>
-                <p class="mb-1 small">Ngày trả: {{ format_date($datPhong?->NgayTra) }} ({{ $calc['days'] ?? 1 }} ngày)</p>
+                <p class="mb-1 small">Ngày trả: {{ format_date($datPhong?->NgayTra) }} ({{ $calc['days'] ?? 1 }} đêm{{ ($calc['lateNights'] ?? 0) > 0 ? ', trả muộn '.$calc['lateNights'].' đêm' : '' }})</p>
             </div>
         </div>
 
@@ -72,7 +72,7 @@
             <tbody>
                 <tr>
                     <td>Tiền phòng ({{ $tenLoaiPhong }})</td>
-                    <td class="text-center">{{ $calc['days'] ?? 1 }} ngày</td>
+                    <td class="text-center">{{ $calc['days'] ?? 1 }} đêm</td>
                     <td class="text-end">{{ format_currency($calc['roomRate'] ?? 0) }}</td>
                     <td class="text-end fw-semibold">{{ format_currency($calc['roomTotal'] ?? 0) }}</td>
                 </tr>
@@ -99,6 +99,8 @@
                 <span>Trạng thái: </span>
                 @if ($item->daThanhToan())
                     <span class="badge bg-success fs-6"><i class="fa-solid fa-check me-1"></i>ĐÃ THANH TOÁN</span>
+                @elseif ($item->daHuy())
+                    <span class="badge bg-secondary fs-6"><i class="fa-solid fa-ban me-1"></i>ĐÃ HỦY (đơn đặt phòng đã hủy)</span>
                 @else
                     <span class="badge bg-warning text-dark fs-6"><i class="fa-solid fa-hourglass-half me-1"></i>CHƯA THANH TOÁN</span>
                 @endif

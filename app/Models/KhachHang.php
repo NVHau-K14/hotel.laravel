@@ -6,6 +6,7 @@ use DomainException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -17,9 +18,6 @@ class KhachHang extends Authenticatable
     public const HOAT_DONG = 'HOAT_DONG';
 
     public const KHOA = 'KHOA';
-
-    /** Số điện thoại hợp lệ (validate_customer của bản gốc) */
-    public const REGEX_DIEN_THOAI = '/^[+0-9][0-9 .()-]{7,19}$/D';
 
     protected $table = 'KHACHHANG';
 
@@ -78,31 +76,54 @@ class KhachHang extends Authenticatable
         });
     }
 
-    /**
-     * Tạo khách hàng mới (đăng ký hoặc khách vãng lai). Mật khẩu rỗng → khách vãng lai (NULL).
-     */
-    public static function taoKhachHang(string $hoTen, ?string $email, string $dienThoai, ?string $diaChi = null, ?string $cmnd = null, ?string $matKhau = null): self
+    public function laKhachVangLai(): bool
     {
-        // Bản gốc luôn lưu chuỗi (kể cả chuỗi rỗng) cho các cột này
-        $email = (string) $email;
+        return empty($this->MatKhau);
+    }
 
-        $daTonTai = self::query()
-            ->where('DienThoai', $dienThoai)
-            ->orWhere(fn (Builder $q) => $q->where('Email', '<>', '')->where('Email', $email))
-            ->exists();
-        if ($daTonTai) {
-            throw new DomainException('Số điện thoại hoặc email đã được đăng ký. Vui lòng đăng nhập tài khoản này.');
-        }
+    /**
+     * Đăng ký tài khoản. Nếu SĐT (hoặc email) đang thuộc một khách vãng lai cũ (chưa có mật khẩu,
+     * do lễ tân tạo hoặc từng đặt phòng trước đây) thì nhận lại bản ghi đó để giữ lịch sử đặt phòng.
+     * SĐT/email thuộc tài khoản đã có mật khẩu → báo lỗi.
+     */
+    public static function dangKy(string $hoTen, ?string $email, string $dienThoai, ?string $diaChi, ?string $cmnd, string $matKhau): self
+    {
+        return DB::transaction(function () use ($hoTen, $email, $dienThoai, $diaChi, $cmnd, $matKhau) {
+            $email = (string) $email;
+            $trung = self::query()
+                ->where('DienThoai', $dienThoai)
+                ->orWhere(fn (Builder $q) => $q->where('Email', '<>', '')->where('Email', $email))
+                ->lockForUpdate()
+                ->get();
 
-        return self::create([
-            'HoTen' => $hoTen,
-            'Email' => $email,
-            'DiaChi' => (string) $diaChi,
-            'DienThoai' => $dienThoai,
-            'CMND' => (string) $cmnd,
-            'MatKhau' => ($matKhau === null || $matKhau === '') ? null : Hash::make($matKhau),
-            'TrangThai' => self::HOAT_DONG,
-        ]);
+            if ($trung->contains(fn (self $kh) => ! $kh->laKhachVangLai())) {
+                throw new DomainException('Số điện thoại hoặc email đã được đăng ký. Vui lòng đăng nhập tài khoản này.');
+            }
+            if ($trung->count() > 1) {
+                throw new DomainException('Số điện thoại và email đang thuộc hai hồ sơ khác nhau. Vui lòng liên hệ khách sạn để được hỗ trợ.');
+            }
+
+            $duLieu = [
+                'HoTen' => $hoTen,
+                'Email' => $email,
+                'DiaChi' => (string) $diaChi,
+                'DienThoai' => $dienThoai,
+                'CMND' => (string) $cmnd,
+                'MatKhau' => Hash::make($matKhau),
+            ];
+
+            $khachCu = $trung->first();
+            if ($khachCu) {
+                if ($khachCu->biKhoa()) {
+                    throw new DomainException('Hồ sơ khách hàng này đã bị khóa. Vui lòng liên hệ khách sạn.');
+                }
+                $khachCu->update($duLieu);
+
+                return $khachCu;
+            }
+
+            return self::create($duLieu + ['TrangThai' => self::HOAT_DONG]);
+        });
     }
 
     /**

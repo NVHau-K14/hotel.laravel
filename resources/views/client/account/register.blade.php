@@ -21,15 +21,25 @@
                 <input type="text" name="hoTen" class="form-control" placeholder="Nguyễn Văn A" required value="{{ old('hoTen') }}">
             </div>
 
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Số điện thoại di động <span class="text-danger">*</span></label>
+                <input type="tel" name="dienThoai" class="form-control" placeholder="0901234567" required
+                       inputmode="numeric" maxlength="15" autocomplete="tel" value="{{ old('dienThoai') }}">
+                <div class="form-text">Đã từng đặt phòng tại khách sạn? Dùng đúng số điện thoại cũ để nhận lại lịch sử đặt phòng.</div>
+            </div>
+
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
-                    <input type="tel" name="dienThoai" class="form-control" placeholder="0901234567" required value="{{ old('dienThoai') }}">
+                    <label class="form-label fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
+                    <input type="password" name="password" class="form-control" placeholder="Mật khẩu" required
+                           minlength="8" maxlength="72" autocomplete="new-password">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
-                    <input type="password" name="password" class="form-control" placeholder="Mật khẩu" required>
+                    <label class="form-label fw-semibold">Nhập lại mật khẩu <span class="text-danger">*</span></label>
+                    <input type="password" name="password_confirmation" class="form-control" placeholder="Nhập lại mật khẩu" required
+                           minlength="8" maxlength="72" autocomplete="new-password">
                 </div>
+                <div class="col-12 form-text mt-1">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường và chữ số; không chứa số điện thoại hoặc email.</div>
             </div>
 
             <div class="mb-3">
@@ -40,7 +50,7 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">CMND / CCCD</label>
-                    <input type="text" name="cmnd" class="form-control" placeholder="Số CCCD" value="{{ old('cmnd') }}">
+                    <input type="text" name="cmnd" class="form-control" placeholder="9 hoặc 12 chữ số" inputmode="numeric" maxlength="12" value="{{ old('cmnd') }}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Địa chỉ</label>

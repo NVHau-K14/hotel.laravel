@@ -30,7 +30,8 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Mật khẩu {!! $item ? '(để trống nếu không đổi)' : '<span class="text-danger">*</span>' !!}</label>
-                    <input type="password" name="password" class="form-control" placeholder="Mật khẩu" {{ $item ? '' : 'required' }}>
+                    <input type="password" name="password" class="form-control" placeholder="Mật khẩu" minlength="8" maxlength="72" autocomplete="new-password" {{ $item ? '' : 'required' }}>
+                    <div class="form-text">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường và chữ số.{{ $item ? ' Để trống nếu không đổi.' : '' }}</div>
                 </div>
             </div>
 
@@ -44,6 +45,8 @@
                 <select name="maChucVu" class="form-select" required>
                     <option value="">-- Chọn chức vụ --</option>
                     @foreach ($chucVus as $cv)
+                        {{-- Chỉ Quản lý mới gán được chức vụ Quản lý --}}
+                        @continue($cv->TenChucVu === \App\Models\ChucVu::QUAN_LY && ! auth('admin')->user()->laQuanLy() && $item?->MaChucVu != $cv->MaChucVu)
                         <option value="{{ $cv->MaChucVu }}" @selected(old('maChucVu', $item?->MaChucVu) == $cv->MaChucVu)>
                             {{ $cv->TenChucVu }}
                         </option>

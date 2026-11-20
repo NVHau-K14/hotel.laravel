@@ -11,6 +11,23 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  */
 class NhanVien extends Authenticatable
 {
+    /** Mã quyền => route trang danh sách, theo thứ tự menu */
+    public const TRANG_THEO_QUYEN = [
+        'DASHBOARD' => 'admin.dashboard',
+        'DAT_PHONG' => 'admin.dat-phong.index',
+        'PHONG' => 'admin.phong.index',
+        'LOAI_PHONG' => 'admin.loai-phong.index',
+        'DICH_VU' => 'admin.dich-vu.index',
+        'CT_DICH_VU' => 'admin.ct-dich-vu.index',
+        'HOA_DON' => 'admin.hoa-don.index',
+        'KHACH_HANG' => 'admin.khach-hang.index',
+        'NHAN_VIEN' => 'admin.nhan-vien.index',
+        'PHAN_CONG' => 'admin.phan-cong.index',
+        'CHUC_VU' => 'admin.chuc-vu.index',
+        'DANH_GIA' => 'admin.danh-gia.index',
+        'THONG_KE' => 'admin.thong-ke.index',
+    ];
+
     protected $table = 'NHANVIEN';
 
     protected $primaryKey = 'MaNhanVien';
@@ -71,12 +88,32 @@ class NhanVien extends Authenticatable
      */
     public function coQuyen(string $maQuyen): bool
     {
-        if ($this->chucVu?->TenChucVu === ChucVu::QUAN_LY) {
+        if ($this->laQuanLy()) {
             return true;
         }
 
         $this->dsQuyenDaTai ??= $this->chucVu?->dsQuyen() ?? [];
 
         return in_array($maQuyen, $this->dsQuyenDaTai, true);
+    }
+
+    public function laQuanLy(): bool
+    {
+        return $this->chucVu?->TenChucVu === ChucVu::QUAN_LY;
+    }
+
+    /**
+     * Trang đầu tiên nhân viên được phép mở (sau đăng nhập / đổi mật khẩu / trang 403),
+     * theo thứ tự menu. Không có quyền nào → trang đổi mật khẩu.
+     */
+    public function trangDauTien(): string
+    {
+        foreach (self::TRANG_THEO_QUYEN as $maQuyen => $tenRoute) {
+            if ($this->coQuyen($maQuyen)) {
+                return route($tenRoute);
+            }
+        }
+
+        return route('admin.doi-mat-khau');
     }
 }

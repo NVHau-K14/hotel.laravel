@@ -25,9 +25,9 @@ class CtDichVuService
      * Đặt số lượng của một dịch vụ trong đơn (thêm mới nếu chưa có).
      * Dòng đã có thì giữ đơn giá cũ; dòng mới lấy giá hiện tại của dịch vụ.
      */
-    public function save(int $maDichVu, int $maCTDatPhong, int $soLuong, ?int $maCTDichVu = null): bool
+    public function save(int $maDichVu, int $maCTDatPhong, int $soLuong): bool
     {
-        return DB::transaction(function () use ($maDichVu, $maCTDatPhong, $soLuong, $maCTDichVu) {
+        return DB::transaction(function () use ($maDichVu, $maCTDatPhong, $soLuong) {
             $this->datPhongService->assertServiceEditable($maCTDatPhong);
 
             if ($soLuong < 1 || $soLuong > self::SO_LUONG_TOI_DA) {
@@ -53,8 +53,8 @@ class CtDichVuService
                 ]);
             } else {
                 CtDichVu::create([
-                    // Khóa thật là (MaDichVu, MaCTDatPhong); MaCTDichVu chỉ là số hiển thị
-                    'MaCTDichVu' => $maCTDichVu ?: (int) CtDichVu::max('MaCTDichVu') + 1,
+                    // Khóa thật là (MaDichVu, MaCTDatPhong); MaCTDichVu là số hiển thị do hệ thống tự cấp
+                    'MaCTDichVu' => (int) CtDichVu::lockForUpdate()->max('MaCTDichVu') + 1,
                     'MaDichVu' => $maDichVu,
                     'SoLuong' => $soLuong,
                     'MaCTDatPhong' => $maCTDatPhong,
@@ -94,7 +94,9 @@ class CtDichVuService
         return DB::transaction(function () use ($maDichVu, $maCTDatPhong) {
             $this->datPhongService->assertServiceEditable($maCTDatPhong);
 
-            CtDichVu::xoaTheoKhoa($maDichVu, $maCTDatPhong);
+            if (CtDichVu::xoaTheoKhoa($maDichVu, $maCTDatPhong) === 0) {
+                throw new DomainException('Dịch vụ này không có trong đơn đặt phòng.');
+            }
             $this->refreshInvoice($maCTDatPhong);
 
             return true;

@@ -36,6 +36,19 @@ class DatPhong extends Model
         self::DANG_SU_DUNG => [self::DA_HOAN_THANH],
     ];
 
+    /**
+     * Ngày trả "thực tế" dùng khi kiểm tra trùng lịch: khách đang ở quá ngày trả vẫn chiếm phòng
+     * tới hết hôm nay (tham số: ngày mai). Dùng trong whereRaw: SQL_NGAY_TRA_THUC_TE.' > ?'.
+     */
+    public const SQL_NGAY_TRA_THUC_TE = "CASE WHEN TrangThai = 'DANG_SU_DUNG' THEN GREATEST(NgayTra, ?) ELSE NgayTra END";
+
+    /** Giới hạn khi khách tự đặt trên website (chống giữ chỗ ảo) */
+    public const SO_DEM_TOI_DA = 30;
+
+    public const SO_NGAY_DAT_TRUOC_TOI_DA = 365;
+
+    public const SO_DON_CHO_DUYET_TOI_DA = 3;
+
     /** Giá trị cột payment_status */
     public const THANH_TOAN_CHUA_TAO = 'CHUA_TAO';
 

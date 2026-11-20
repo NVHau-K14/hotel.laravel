@@ -46,11 +46,15 @@
             <div class="mb-3">
                 <label class="form-label fw-semibold">Trạng thái phòng</label>
                 <select name="trangThai" class="form-select">
-                    {{-- Sửa lỗi L1: bỏ "Đang sử dụng", chỉ còn 4 trạng thái hợp lệ --}}
-                    @foreach (\App\Models\Phong::TRANG_THAI as $st)
-                        <option value="{{ $st }}" @selected(old('trangThai', $item?->TrangThai ?? 'Trống') === $st)>{{ $st }}</option>
+                    {{-- "Đã đặt" / "Đang thuê" do hệ thống tự tính từ đơn đặt phòng, admin chỉ chọn Trống hoặc Bảo trì --}}
+                    @php($trangThaiForm = ($item?->TrangThai === \App\Models\Phong::BAO_TRI) ? \App\Models\Phong::BAO_TRI : \App\Models\Phong::TRONG)
+                    @foreach (\App\Models\Phong::TRANG_THAI_CHON_TAY as $st)
+                        <option value="{{ $st }}" @selected(old('trangThai', $trangThaiForm) === $st)>{{ $st === \App\Models\Phong::TRONG ? 'Hoạt động (tự cập nhật theo đơn)' : $st }}</option>
                     @endforeach
                 </select>
+                @if ($item && in_array($item->TrangThai, [\App\Models\Phong::DA_DAT, \App\Models\Phong::DANG_THUE], true))
+                    <div class="form-text">Hiện tại: <strong>{{ $item->TrangThai }}</strong> (theo đơn đặt phòng).</div>
+                @endif
             </div>
 
             <div class="mb-3">

@@ -29,7 +29,8 @@
 
             <div class="mb-3">
                 <label class="form-label fw-semibold">Mật khẩu mới <span class="text-danger">*</span></label>
-                <input type="password" name="matKhauMoi" class="form-control" required>
+                <input type="password" name="matKhauMoi" class="form-control" minlength="8" maxlength="72" autocomplete="new-password" required>
+                <div class="form-text">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường và chữ số; không chứa tên đăng nhập.</div>
             </div>
 
             <div class="mb-3">
