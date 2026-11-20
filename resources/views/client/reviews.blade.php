@@ -51,7 +51,7 @@
             @auth('web')
                 @if ($phongs->isNotEmpty())
                     <h2 class="sheet-title">Gửi đánh giá</h2>
-                    <p class="sheet-sub">Dành cho các phòng bạn đã ở và đã qua ngày trả phòng.</p>
+                    <p class="sheet-sub">Dành cho các phòng bạn đã ở, sau khi trả phòng và thanh toán xong.</p>
                     <form method="POST" action="{{ route('danh-gia.store') }}">
                         @csrf
                         <div class="mb-3">
@@ -81,7 +81,7 @@
                     </form>
                 @else
                     <h2 class="sheet-title">Gửi đánh giá</h2>
-                    <p class="text-muted mb-0">Bạn có thể đánh giá một phòng sau khi hoàn tất kỳ nghỉ và đã qua ngày trả phòng.</p>
+                    <p class="text-muted mb-0">Bạn có thể đánh giá một phòng ngay sau khi trả phòng và thanh toán xong hóa đơn.</p>
                 @endif
             @else
                 <h2 class="sheet-title">Đã từng ở đây?</h2>
